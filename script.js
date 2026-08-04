@@ -7151,27 +7151,10 @@
             const vw = viewport.clientWidth;
             const vh = viewport.clientHeight;
             if (!vw || !vh) return;
-            let w, h;
-            if (isMobileLayout()) {
-                // На мобильных экранах (узких и высоких) обычный "contain" оставлял
-                // огромный пустой промежуток снизу карты, т.к. её пропорции (3:2)
-                // сильно отличаются от портретного экрана телефона. Поэтому здесь
-                // "cover" — карта всегда заполняет экран целиком по высоте, а лишнее
-                // по бокам уходит за пределы viewport (доступно через пинч/панораму,
-                // см. IIFE с pinch-zoom ниже).
-                w = vh * MAP_ASPECT_RATIO;
+            let w = vw, h = vw / MAP_ASPECT_RATIO;
+            if (h > vh) {
                 h = vh;
-                if (w < vw) {
-                    w = vw;
-                    h = vw / MAP_ASPECT_RATIO;
-                }
-            } else {
-                w = vw;
-                h = vw / MAP_ASPECT_RATIO;
-                if (h > vh) {
-                    h = vh;
-                    w = vh * MAP_ASPECT_RATIO;
-                }
+                w = vh * MAP_ASPECT_RATIO;
             }
             mapEl.style.width = w + 'px';
             mapEl.style.height = h + 'px';
@@ -9187,13 +9170,7 @@
                         return;
                     }
                     lastTapTime = now;
-                    const el = document.getElementById('mapContainer');
-                    const vp = document.getElementById('mapViewport');
-                    const overflowing = el && vp && (
-                        el.offsetWidth * scale > vp.clientWidth + 1 ||
-                        el.offsetHeight * scale > vp.clientHeight + 1
-                    );
-                    isPanning = scale > 1.01 || overflowing;
+                    isPanning = scale > 1.01;
                     lastX = e.touches[0].clientX;
                     lastY = e.touches[0].clientY;
                 }
