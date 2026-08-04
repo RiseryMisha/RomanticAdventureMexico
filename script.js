@@ -2713,10 +2713,27 @@
             }
         }
 
+        // --- Мобильный bottom sheet боковой панели ---
+        function isMobileLayout() {
+            return window.matchMedia('(max-width: 768px)').matches;
+        }
+
+        function toggleMobileSidebar() {
+            document.getElementById('sidebarPanel').classList.toggle('expanded');
+        }
+
+        function expandMobileSidebar() {
+            if (isMobileLayout()) {
+                document.getElementById('sidebarPanel').classList.add('expanded');
+            }
+        }
+
         function selectLocation(step) {
             selectedStep = step;
             const data = locationsData[step];
             if (!data) return;
+
+            expandMobileSidebar();
 
             document.getElementById('sidebar-title').innerText = data.title;
 
@@ -7120,7 +7137,48 @@
             }
         }
 
+        // Реальные пропорции BingAIGC.jpg (1248×832 = 3:2) — держим карту без искажений
+        // при любом размере окна: .map-section всегда получает от fitMapToViewport()
+        // именно эти пропорции, а не просто "занимает всё доступное место", как раньше
+        // (что растягивало object-fit:fill картинку и портило её при несовпадающих
+        // пропорциях экрана).
+        const MAP_ASPECT_RATIO = 1248 / 832;
+
+        function fitMapToViewport() {
+            const viewport = document.getElementById('mapViewport');
+            const mapEl = document.getElementById('mapContainer');
+            if (!viewport || !mapEl) return;
+            const vw = viewport.clientWidth;
+            const vh = viewport.clientHeight;
+            if (!vw || !vh) return;
+            let w, h;
+            if (isMobileLayout()) {
+                // На мобильных экранах (узких и высоких) обычный "contain" оставлял
+                // огромный пустой промежуток снизу карты, т.к. её пропорции (3:2)
+                // сильно отличаются от портретного экрана телефона. Поэтому здесь
+                // "cover" — карта всегда заполняет экран целиком по высоте, а лишнее
+                // по бокам уходит за пределы viewport (доступно через пинч/панораму,
+                // см. IIFE с pinch-zoom ниже).
+                w = vh * MAP_ASPECT_RATIO;
+                h = vh;
+                if (w < vw) {
+                    w = vw;
+                    h = vw / MAP_ASPECT_RATIO;
+                }
+            } else {
+                w = vw;
+                h = vw / MAP_ASPECT_RATIO;
+                if (h > vh) {
+                    h = vh;
+                    w = vh * MAP_ASPECT_RATIO;
+                }
+            }
+            mapEl.style.width = w + 'px';
+            mapEl.style.height = h + 'px';
+        }
+
         function updateMapDisplay() {
+            fitMapToViewport();
             const container = document.getElementById('mapContainer');
             const rect = container.getBoundingClientRect();
             let allPoints = [];
@@ -9073,6 +9131,114 @@
         });
         window.addEventListener('resize', updateMapDisplay);
         setTimeout(updateMapDisplay, 150);
+
+        // ===================================================================
+        // --- PINCH-ZOOM / PAN КАРТЫ (только в мобильной раскладке, <=768px) ---
+        // Работает через CSS-transform на #mapContainer поверх уже правильно
+        // пропорционированного (см. fitMapToViewport()) блока карты. Клики по
+        // чекпоинтам продолжают работать как обычно — CSS-transform не мешает
+        // hit-тестингу браузера. На десктопе жесты не активируются (сначала
+        // проверяем isMobileLayout()), так что обычная мышь не затронута.
+        // ===================================================================
+        (function () {
+            let scale = 1, panX = 0, panY = 0;
+            let startDist = 0, startScale = 1;
+            let lastX = 0, lastY = 0;
+            let isPanning = false;
+            let lastTapTime = 0;
+
+            function applyTransform() {
+                const el = document.getElementById('mapContainer');
+                if (el) el.style.transform = `translate3d(${panX}px, ${panY}px, 0) scale(${scale})`;
+            }
+
+            function clamp() {
+                const viewport = document.getElementById('mapViewport');
+                const el = document.getElementById('mapContainer');
+                if (!viewport || !el) return;
+                const vw = viewport.clientWidth, vh = viewport.clientHeight;
+                const w = el.offsetWidth * scale, h = el.offsetHeight * scale;
+                const maxX = Math.max(0, (w - vw) / 2);
+                const maxY = Math.max(0, (h - vh) / 2);
+                panX = Math.min(maxX, Math.max(-maxX, panX));
+                panY = Math.min(maxY, Math.max(-maxY, panY));
+            }
+
+            function resetMapZoom() {
+                scale = 1; panX = 0; panY = 0;
+                applyTransform();
+            }
+
+            function dist(t1, t2) {
+                return Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            }
+
+            function onTouchStart(e) {
+                if (!isMobileLayout()) return;
+                if (e.touches.length === 2) {
+                    startDist = dist(e.touches[0], e.touches[1]);
+                    startScale = scale;
+                    isPanning = false;
+                } else if (e.touches.length === 1) {
+                    const now = Date.now();
+                    if (now - lastTapTime < 300) {
+                        resetMapZoom();
+                        lastTapTime = 0;
+                        return;
+                    }
+                    lastTapTime = now;
+                    const el = document.getElementById('mapContainer');
+                    const vp = document.getElementById('mapViewport');
+                    const overflowing = el && vp && (
+                        el.offsetWidth * scale > vp.clientWidth + 1 ||
+                        el.offsetHeight * scale > vp.clientHeight + 1
+                    );
+                    isPanning = scale > 1.01 || overflowing;
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                }
+            }
+
+            function onTouchMove(e) {
+                if (!isMobileLayout()) return;
+                if (e.touches.length === 2) {
+                    e.preventDefault();
+                    const newDist = dist(e.touches[0], e.touches[1]);
+                    scale = Math.min(4, Math.max(1, startScale * (newDist / startDist)));
+                    clamp();
+                    applyTransform();
+                } else if (e.touches.length === 1 && isPanning) {
+                    e.preventDefault();
+                    const dx = e.touches[0].clientX - lastX;
+                    const dy = e.touches[0].clientY - lastY;
+                    lastX = e.touches[0].clientX;
+                    lastY = e.touches[0].clientY;
+                    panX += dx;
+                    panY += dy;
+                    clamp();
+                    applyTransform();
+                }
+            }
+
+            function onTouchEnd(e) {
+                if (!isMobileLayout()) return;
+                if (e.touches.length === 0) {
+                    isPanning = false;
+                    if (scale <= 1.02) resetMapZoom();
+                }
+            }
+
+            const mapViewportEl = document.getElementById('mapViewport');
+            if (mapViewportEl) {
+                mapViewportEl.addEventListener('touchstart', onTouchStart, { passive: true });
+                mapViewportEl.addEventListener('touchmove', onTouchMove, { passive: false });
+                mapViewportEl.addEventListener('touchend', onTouchEnd, { passive: true });
+            }
+
+            window.addEventListener('resize', function () {
+                if (!isMobileLayout()) resetMapZoom();
+            });
+        })();
 
         // ===================================================================
         // ИНТРО: жуткое видео -> Миша здоровается (misha_finale.png, белые
