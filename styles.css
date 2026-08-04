@@ -29,7 +29,7 @@
            ширину/высоту, точно повторяющие пропорции самой картинки BingAIGC.jpg (3:2) —
            поэтому object-fit:fill на .map-image больше не искажает карту при любом
            изменении размера окна: контейнер и картинка всегда одной пропорции, лишнее
-           место вокруг заполняется фоном .map-viewport в цветах сайта (см. ниже). */
+           место вокруг просто остаётся чёрным фоном .map-viewport. */
         .map-viewport {
             position: relative;
             flex-grow: 1;
@@ -38,7 +38,7 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            background: radial-gradient(circle at center, #2b1810 0%, #1a0f0a 100%);
+            background: #000;
         }
 
         .map-section {

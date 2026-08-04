@@ -73,6 +73,7 @@
 
     <div class="game-layout">
         <!-- Карта -->
+        <div class="map-viewport" id="mapViewport">
         <div class="map-section" id="mapContainer">
             <img src="BingAIGC.jpg" alt="Map of Mexico" class="map-image" id="mapImg">
 
@@ -107,9 +108,11 @@
             <div class="checkpoint cp-23" onclick="selectLocation(23)"><img src="Icons/23.png" alt="23" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><span>23</span></div>
             <div class="checkpoint cp-24" onclick="selectLocation(24)"><img src="Icons/24.png" alt="24" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"><span>24</span></div>
         </div>
+        </div>
 
         <!-- Правая панель -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebarPanel">
+            <div class="sidebar-drag-handle" id="sidebarDragHandle" onclick="toggleMobileSidebar()"></div>
             <h1>Romantic Adventure</h1>
             
             <div class="progress-container">
