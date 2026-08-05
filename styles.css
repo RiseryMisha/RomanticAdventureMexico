@@ -1696,6 +1696,12 @@
             display: none;
         }
 
+        /* Уточняющая реплика персонажа (не ошибка) — например, у вопроса про
+           Pirates of the Caribbean, когда ответ верный, но неполный. */
+        .cinema-followup-msg {
+            color: #8b5a2b;
+        }
+
         /* Стили для Шифров (Локация 3) */
         .cipher-card {
             background: rgba(139, 0, 0, 0.04);

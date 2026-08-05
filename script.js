@@ -1505,8 +1505,39 @@
                     { image: 'films/film17.jpg', hint: "Birds flying high...", answers: ["the boy and the heron", "boy and the heron"] },
                     { image: 'films/film18.jpg', hint: "That is our first date.", answers: ["a dogs purpose", "dogs purpose"] },
                     { image: 'films/film19.jpg', hint: "-_-", answers: ["miss night and day"] },
-                    { image: 'films/film20.jpg', hint: "Not this time — why have I been sending you so much from this movie if you still can't guess it?", answers: ["ratatouille"] }
+                    { image: 'films/film20.jpg', hint: "Not this time — why have I been sending you so much from this movie if you still can't guess it?", answers: ["ratatouille"] },
+                    // --- ФАЗА 2: фильмы/сериалы, которые она смотрела САМА (без него) ---
+                    // Разделены короткой репликой Гомера (см. midDialogues[20] ниже) —
+                    // она показывается один раз, между вопросом 20 и вопросом 21.
+                    { image: 'films/film21.jpg', hint: "You couldn't live with your own failure. Where did that bring you? Back to hint?", answers: ["avengers endgame", "avengers: endgame", "endgame"] },
+                    { image: 'films/film22.jpg', hint: "Have you watched Snydercut?", answers: ["justice league"] },
+                    { image: 'films/film23.jpg', hint: "One does not simply walk into Mordor", answers: ["the lord of the rings the fellowship of the ring", "the fellowship of the ring", "fellowship of the ring", "tlotr"] },
+                    { image: 'films/film24.jpg', hint: "Are you actually a geek? You totally didn't join this side of the force...", answers: ["star wars episode iii revenge of the sith", "star wars episode 3 revenge of the sith", "revenge of the sith", "star wars 3", "star wars revenge of the sith", "star wars 3 revenge of the sith"] },
+                    { image: 'films/film25.jpg', hint: "Red or blue?", answers: ["the matrix", "matrix"] },
+                    { image: 'films/film26.jpg', hint: "You would've drowned in the Atlantic Ocean without hints...", answers: ["titanic"] },
+                    { image: 'films/film27.jpg', hint: "With great power comes great hint O_O", answers: ["spider man", "spiderman", "spider men"] },
+                    { image: 'films/film28.jpg', hint: "Dreamworks cartoon under water.", answers: ["shark tale"] },
+                    { image: 'films/film29.jpg', hint: "James Cameron totally judging you.", answers: ["avatar"] },
+                    { image: 'films/film30.jpg', hint: "Handsome actor, chosen one.", answers: ["dune"] },
+                    { image: 'films/film31.jpg', hint: "Clown robbing a bank and sneaking onto a bus.", answers: ["the dark knight", "dark knight"] },
+                    // Спец-вопрос: если ответить просто "Pirates of the Caribbean" (без части) —
+                    // засчитано НЕ будет, вместо ошибки появится уточняющая реплика Гомера
+                    // (см. followUp и checkMovieAnswer()). Полный правильный ответ — ниже.
+                    { image: 'films/film32.jpg', hint: "How many pirate movies do you know?", answers: ["pirates of the caribbean at worlds end", "at worlds end", "pirates of the caribbean 3"], followUp: { match: ["pirates of the caribbean", "pirates of caribbean"], message: "🍩 Homer: Ooh, close! But which part exactly?" } },
+                    { image: 'films/film33.jpg', hint: "Can a robot be a bee?", answers: ["transformers"] },
+                    { image: 'films/film34.jpg', hint: "Poor rich dwarfs.", answers: ["the hobbit an unexpected journey", "an unexpected journey", "unexpected journey", "the hobbit"] },
+                    { image: 'films/film35.jpg', hint: "Dragon + Donkey? Really?", answers: ["shrek"] }
                 ],
+                // Короткая реплика-переход между двумя "фазами" викторины — показывается
+                // один раз, перед вопросом с данным индексом (0-based; 20 = 21-й вопрос,
+                // первый из фильмов, которые она смотрела САМА). См. proceedToNextMovieQuestion().
+                midDialogues: {
+                    20: [
+                        { text: "Alright, that's the ones I *know* we watched together — even I was taking notes." },
+                        { text: "Now let's step it up. These next ones? All her. Watched solo, no Homer commentary track included." },
+                        { text: "Let's see if she's been holding out on you." }
+                    ]
+                },
                 completeMessage: "🎬 That's a wrap! You know our movie nights better than IMDb.",
                 solved: false
             },
@@ -6695,6 +6726,12 @@
         // продолжат работать как раньше.
         let mqStage = 'quiz';
         let mqDialogueLineIndex = 0;
+        // Ключ текущей midDialogue-реплики (индекс вопроса, ПЕРЕД которым она
+        // показывается) и множество уже показанных — чтобы не повторять её,
+        // если вернуться назад по вопросам (в этом движке такого нет, но на
+        // всякий случай) или переоткрыть окно в рамках одной сессии викторины.
+        let mqMidKey = null;
+        let mqShownMidDialogues = new Set();
 
         function normalizeMovieAnswer(str) {
             return str
@@ -6710,6 +6747,8 @@
             mqHintShown = false;
             mqAnswered = false;
             mqDialogueLineIndex = 0;
+            mqMidKey = null;
+            mqShownMidDialogues = new Set();
             mqStage = (task.dialogue && task.dialogue.length) ? 'dialogue' : 'quiz';
             if (mqStage === 'dialogue') {
                 renderMqIntroStage(task);
@@ -6836,11 +6875,24 @@
             if (raw.trim()) reportAttempt('Movie still guess', raw, isCorrect);
 
             if (!raw.trim() || !isCorrect) {
+                // q.followUp — для вопросов, где слишком общий (но не полный) ответ не
+                // засчитывается как правильный, но и не является ошибкой — вместо
+                // "Not quite" показывается уточняющая реплика (см. вопрос про Pirates
+                // of the Caribbean: At World's End). Инпут не блокируется, можно сразу
+                // ввести уточнённый ответ.
+                if (raw.trim() && q.followUp && q.followUp.match.some(m => normalizeMovieAnswer(m) === normalized)) {
+                    errorMsg.className = 'error-msg cinema-followup-msg';
+                    errorMsg.style.display = 'block';
+                    errorMsg.innerText = q.followUp.message;
+                    return;
+                }
+                errorMsg.className = 'error-msg';
                 errorMsg.style.display = 'block';
                 errorMsg.innerText = "❌ Not quite — try again!";
                 return;
             }
 
+            errorMsg.className = 'error-msg';
             errorMsg.style.display = 'none';
             mqAnswered = true;
             mqHintShown = true; // раскрываем подсказку в любом случае — там весёлые отсылки
@@ -6854,7 +6906,15 @@
             mqAnswered = false;
 
             if (mqIndex < task.questions.length) {
-                renderMovieQuizQuestion();
+                if (task.midDialogues && task.midDialogues[mqIndex] && !mqShownMidDialogues.has(mqIndex)) {
+                    mqShownMidDialogues.add(mqIndex);
+                    mqMidKey = mqIndex;
+                    mqStage = 'middialogue';
+                    mqDialogueLineIndex = 0;
+                    renderMqMidStage(task);
+                } else {
+                    renderMovieQuizQuestion();
+                }
             } else if (task.outroDialogue && task.outroDialogue.length) {
                 mqStage = 'outro';
                 mqDialogueLineIndex = 0;
@@ -6863,6 +6923,54 @@
                 alert(task.completeMessage || "🎬 That's a wrap! Great job with the movie quiz!");
                 advanceStep(activeTaskStep);
             }
+        }
+
+        // --- Стадия 'middialogue': короткая реплика-переход ПОСЕРЕДИНЕ викторины
+        // (например, между "фильмами, которые смотрели вместе" и "которые она смотрела
+        // сама"), см. task.midDialogues. Полностью аналогична intro/outro-стадиям. ---
+        function renderMqMidStage(task) {
+            const lines = task.midDialogues[mqMidKey];
+            const line = lines[mqDialogueLineIndex];
+            const isLast = mqDialogueLineIndex === lines.length - 1;
+            const cls = task.charClass || 'homer';
+
+            document.getElementById('modal-title').innerText = task.modalTitle;
+
+            const html = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-${cls}">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-${cls}">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-${cls}" onclick="mqNextMidLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'tap the bubble to continue…'}</div>
+                </div>
+            `;
+            document.getElementById('modal-content').innerHTML = html;
+            document.getElementById('errorMsg').style.display = 'none';
+
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="mqFinishMidStage()">Continue ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="mqNextMidLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function mqNextMidLine() {
+            const task = tasksData[activeTaskStep];
+            const lines = task.midDialogues[mqMidKey];
+            if (mqDialogueLineIndex < lines.length - 1) {
+                mqDialogueLineIndex++;
+                renderMqMidStage(task);
+            }
+        }
+
+        function mqFinishMidStage() {
+            mqStage = 'quiz';
+            renderMovieQuizQuestion();
         }
 
         // --- Стадия 'outro': прощальные реплики персонажа после последнего вопроса
@@ -7363,6 +7471,10 @@
                 clearInterval(tetrisDropTimerId);
                 tetrisDropTimerId = null;
             }
+            // На всякий случай сбрасываем класс #errorMsg — moviequiz временно
+            // подменяет его на 'cinema-followup-msg' для уточняющих реплик
+            // (см. checkMovieAnswer), чтобы не утёк в другое задание.
+            document.getElementById('errorMsg').className = 'error-msg';
             hpStopMusic();
         }
 
