@@ -2766,12 +2766,12 @@
             }
         }
 
-        function selectLocation(step) {
+        function selectLocation(step, autoExpand) {
             selectedStep = step;
             const data = locationsData[step];
             if (!data) return;
 
-            expandMobileSidebar();
+            if (autoExpand !== false) expandMobileSidebar();
 
             document.getElementById('sidebar-title').innerText = data.title;
 
@@ -9206,7 +9206,10 @@
             localStorage.removeItem('hogwartsHouse');
             updateProgressUI();
             updateMapDisplay();
-            selectLocation(currentStep);
+            // autoExpand=false: при первом открытии страницы карта должна быть
+            // видна сразу, а не скрыта за развёрнутой шторкой заданий (на мобильных —
+            // шторка остаётся свёрнута внизу, "хвостиком", как и задумано).
+            selectLocation(currentStep, false);
         });
         window.addEventListener('resize', updateMapDisplay);
         setTimeout(updateMapDisplay, 150);
