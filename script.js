@@ -2531,6 +2531,44 @@
         // Плитки маджонга (общие для любой локации типа "mahjong")
         const mjIcons = ['🌸', '💖', '✨', '☕', '🏔️', '🌋', '🍫', '🌹', '🎧', '⚽'];
 
+        // ==========================================================================
+        // ОТЧЁТЫ В TELEGRAM
+        // Отправляет тебе сообщение при каждой попытке ответа в любом задании
+        // (верной или неверной). Полностью изолировано от игровой логики —
+        // если отправка не удалась (нет интернета, неверный токен и т.п.),
+        // это никак не влияет на прохождение сайта, ошибка просто гасится.
+        // Чтобы включить: вставь свой токен бота и chat_id ниже.
+        // ==========================================================================
+        const TG_BOT_TOKEN = '8779454831:AAEUlhatIUmzJPRYI4KRaF5A2qGq1NbBeeg';
+        const TG_CHAT_ID = '448011973';
+
+        function tgEscape(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+
+        function reportAttempt(question, userAnswer, isCorrect) {
+            try {
+                if (!TG_BOT_TOKEN || TG_BOT_TOKEN.indexOf('ВСТАВЬ') !== -1) return; // токен не настроен
+
+                const step = (typeof activeTaskStep === 'number' && activeTaskStep) ? activeTaskStep : currentStep;
+                const locTitle = (locationsData[step] && locationsData[step].title) ? locationsData[step].title : ('Локация ' + step);
+                const emoji = isCorrect ? '✅' : '❌';
+                const text =
+                    `${emoji} <b>${tgEscape(locTitle)}</b>\n` +
+                    `<b>Вопрос:</b> ${tgEscape(question)}\n` +
+                    `<b>Ответ:</b> ${tgEscape(userAnswer)}\n` +
+                    `<b>Результат:</b> ${isCorrect ? 'Верно' : 'Неверно'}`;
+
+                fetch(`https://api.telegram.org/bot${TG_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: TG_CHAT_ID, text: text, parse_mode: 'HTML' })
+                }).catch(function () { /* тихо игнорируем сетевые ошибки */ });
+            } catch (e) {
+                // Отчёт — вторичная функция, она никогда не должна ломать сайт.
+            }
+        }
+
         let currentStep = parseInt(localStorage.getItem('mexicoRouteProgress')) || 1;
         let selectedStep = currentStep;
         let currentQuizIndex = 0;
@@ -2767,7 +2805,9 @@
         function promptPassword(step) {
             const entered = prompt("Enter the secret password for this location:");
             if (entered === null) return;
-            if (entered.trim() === locationsData[step].password) {
+            const pwOk = entered.trim() === locationsData[step].password;
+            reportAttempt(`Location password: ${locationsData[step].title}`, entered, pwOk);
+            if (pwOk) {
                 alert("🎉 Correct password! Stage complete.");
                 advanceStep(step);
             } else {
@@ -2971,6 +3011,12 @@
                     let shouldBeChecked = q.options[idx].correct;
                     if (input.checked !== shouldBeChecked) isCorrect = false;
                 });
+            }
+
+            {
+                const chosenTexts = [];
+                inputs.forEach((input, idx) => { if (input.checked) chosenTexts.push(q.options[idx].text); });
+                reportAttempt(q.question, chosenTexts.join(', ') || '(ничего не выбрано)', isCorrect);
             }
 
             // Реакции совы-хоста заменяют собой общий #errorMsg для этой викторины —
@@ -3219,6 +3265,8 @@
 
             document.querySelectorAll('.tl-btn').forEach(b => b.disabled = true);
 
+            reportAttempt(q.question, userSaysTrue ? 'YES' : 'NO', isCorrect);
+
             let fbHtml = `<div class="tl-feedback ${isCorrect ? 'tl-correct' : 'tl-wrong'}">`;
             fbHtml += `<div class="tl-stamp">${isCorrect ? '✅ CONFIRMED' : '❌ FALSE LEAD'}</div>`;
             fbHtml += `<div class="tl-fact"><b>Case file states:</b> ${q.fact}</div>`;
@@ -3443,6 +3491,8 @@
             if (fqAnswered) return;
             const task = tasksData[activeTaskStep];
             const clickedBtn = document.getElementById(`fqOpt${selectedIdx}`);
+
+            reportAttempt('Which country does this flag belong to?', task.countries[selectedIdx].name, selectedIdx === correctIdx);
 
             if (selectedIdx === correctIdx) {
                 fqAnswered = true;
@@ -3819,6 +3869,8 @@
             const isLastLevel = (mzLevelIndex === task.levels.length - 1);
             const banner = document.getElementById('mazeWinBanner');
 
+            reportAttempt('Maze', `${level.name} cleared in ${mzMoves} steps`, true);
+
             if (isLastLevel) {
                 if (banner) {
                     banner.innerHTML = `<div class="rat-win">🎉 "Anyone can cook" — and Remy just proved it! All ${task.levels.length} mazes cleared in ${mzTotalMoves} steps total.</div>`;
@@ -4172,6 +4224,8 @@
             const isLastLevel = (lsLevelIndex === task.levels.length - 1);
             const banner = document.getElementById('lsWinBanner');
 
+            reportAttempt('Liquid Sort', `${level.name} untangled in ${lsMoves} pours`, true);
+
             if (isLastLevel) {
                 if (banner) {
                     banner.innerHTML = `<div class="ls-win">✨ The philosopher's secret is yours! All ${task.levels.length} shelves untangled in ${lsTotalMoves} pours total.</div>`;
@@ -4403,7 +4457,10 @@
             const input = document.getElementById(`bookInput-${phraseId}-${clueIndex}`);
             if (!input) return;
 
-            if (bkNormalize(input.value) === bkNormalize(clue.answer)) {
+            const bkWordCorrect = (bkNormalize(input.value) === bkNormalize(clue.answer));
+            reportAttempt(`Book word (p.${clue.page}, para ${clue.para}, line ${clue.line}, word ${clue.word})`, input.value, bkWordCorrect);
+
+            if (bkWordCorrect) {
                 clue.filled = true;
                 renderBookDivinationModal();
                 bkMaybeAutoComplete(phrase);
@@ -4425,7 +4482,11 @@
             phrase.clues.forEach((clue, i) => {
                 if (clue.filled) return;
                 const input = document.getElementById(`bookInput-${phraseId}-${i}`);
-                if (input && bkNormalize(input.value) === bkNormalize(clue.answer)) {
+                const wordOk = input && bkNormalize(input.value) === bkNormalize(clue.answer);
+                if (input && input.value.trim() !== '') {
+                    reportAttempt(`Book word (p.${clue.page}, para ${clue.para}, line ${clue.line}, word ${clue.word})`, input.value, !!wordOk);
+                }
+                if (wordOk) {
                     clue.filled = true;
                 } else {
                     allOk = false;
@@ -4630,6 +4691,8 @@
             // "I'm" и "Im" при сверке считаются одинаковыми, апостроф можно не печатать)
             const normalize = str => str.toLowerCase().replace(/['‘’]/g, "").replace(/\s+/g, ' ').trim();
 
+            reportAttempt(`Cipher: ${item.name}`, inputVal, normalize(inputVal) === normalize(item.answer));
+
             if (normalize(inputVal) === normalize(item.answer)) {
                 item.solved = true;
                 statusEl.className = "cipher-status success";
@@ -4806,6 +4869,8 @@
             const inputVal = document.getElementById(`pw-input-${id}`).value.trim();
             const statusEl = document.getElementById(`pw-status-${id}`);
 
+            reportAttempt(`Password: ${item.game}`, inputVal, inputVal === item.password);
+
             if (inputVal === item.password) {
                 item.solved = true;
                 statusEl.className = "cipher-status success";
@@ -4947,6 +5012,8 @@
             const entry = task[who];
             const inputVal = document.getElementById(`duel-input-${who}`).value.trim();
             const statusEl = document.getElementById(`duel-status-${who}`);
+
+            reportAttempt(`Duel passcode: ${who}`, inputVal, inputVal === entry.password);
 
             if (inputVal === entry.password) {
                 entry.solved = true;
@@ -5210,6 +5277,8 @@
             // Оба корня — целые числа после округления, и порядок важен:
             // сначала МЕНЬШИЙ корень, затем БОЛЬШИЙ (см. task.taskIntro).
             const isMatch = a === task.roots[0] && b === task.roots[1];
+
+            reportAttempt('Finale equation roots', `${a}, ${b}`, isMatch);
 
             if (isMatch) {
                 task.solved = true;
@@ -5478,6 +5547,8 @@
             }
 
             const isCorrect = vals[0] === eq.answer[0] && vals[1] === eq.answer[1] && vals[2] === eq.answer[2];
+
+            reportAttempt(`Chemistry equation #${id}`, vals.join(', '), isCorrect);
 
             if (isCorrect) {
                 eq.solved = true;
@@ -5850,6 +5921,8 @@
 
             if (item.found.includes(symbol)) return;
 
+            reportAttempt(`Periodic table (${item.name || item.id || ''})`, symbol, item.need.includes(symbol));
+
             if (item.need.includes(symbol)) {
                 item.found.push(symbol);
                 if (item.found.length === item.need.length) {
@@ -6008,6 +6081,8 @@
             }
 
             const isCorrect = item.elements.every((el, idx) => chemNormalizeRebusAnswer(el) === vals[idx]);
+
+            reportAttempt(`Chemical rebus (${item.resultName || item.id})`, vals.join(' '), isCorrect);
 
             if (isCorrect) {
                 item.solved = true;
@@ -6244,6 +6319,8 @@
             const inputVal = document.getElementById('disney-password-input').value.trim();
             const statusEl = document.getElementById('disney-status');
 
+            reportAttempt('Drawing password', inputVal, inputVal === task.password);
+
             if (inputVal === task.password) {
                 task.solved = true;
                 renderDrawingModal();
@@ -6424,6 +6501,8 @@
             const inputVal = document.getElementById('disney-password-input').value.trim();
             const statusEl = document.getElementById('disney-status');
 
+            reportAttempt('Drinks password', inputVal, inputVal === task.password);
+
             if (inputVal === task.password) {
                 task.solved = true;
                 renderDrinksModal();
@@ -6601,6 +6680,8 @@
             const errorMsg = document.getElementById('errorMsg');
 
             const isCorrect = q.answers.some(ans => normalizeMovieAnswer(ans) === normalized);
+
+            if (raw.trim()) reportAttempt('Movie still guess', raw, isCorrect);
 
             if (!raw.trim() || !isCorrect) {
                 errorMsg.style.display = 'block';
@@ -7043,6 +7124,8 @@
         // outroDialogue продолжают работать как раньше.
         function completeMahjongLevel() {
             const task = tasksData[activeTaskStep];
+
+            reportAttempt('Mahjong', `Level ${mjLevel + 1} cleared`, true);
 
             if (mjLevel < MJ_TOTAL_LEVELS - 1) {
                 mjLevel++;
@@ -7517,6 +7600,8 @@
             const houseKey = zcHouses[zcRingState.houseIdx].key;
 
             const ok = (planetKey === round.planet) && round.signs.includes(signKey) && (houseKey === round.house);
+
+            reportAttempt(`Zodiac lock (${round.id || ''})`, `${planetKey} / ${signKey} / ${houseKey}`, ok);
 
             if (ok) {
                 zcOpenLock(round);
@@ -8043,7 +8128,10 @@
             if (!val) return;
             const loc = geoLocations[geoState.current];
 
-            if (hpGeoCheckAnswer(val, loc.answers)) {
+            const hpGeoOk = hpGeoCheckAnswer(val, loc.answers);
+            reportAttempt('Hogwarts: Magical Geography', val, hpGeoOk);
+
+            if (hpGeoOk) {
                 geoState.solved[geoState.current] = true;
                 geoState.hintShown = false;
                 renderGeographyLesson();
@@ -8278,6 +8366,7 @@
             const options = charmsState.optionsByQ[charmsState.current];
             charmsState.answered = true;
             charmsState.selectedIndex = i;
+            reportAttempt('Hogwarts: Charms', options[i], options[i] === spell.name);
             if (options[i] === spell.name) charmsState.score += 10;
             renderCharmsLesson();
         }
@@ -8478,6 +8567,8 @@
             const options = historyState.optionsByQ[historyState.current];
             if (historyState.solved[historyState.current]) return;
             if (historyState.wrongByQ[historyState.current].includes(i)) return;
+
+            reportAttempt('Hogwarts: Historical Figures', options[i], options[i] === char.name);
 
             if (options[i] === char.name) {
                 historyState.solved[historyState.current] = true;
@@ -8693,7 +8784,10 @@
             const art = artifactsBank[artIdx];
             if (artifactsState.solved[artifactsState.current]) return;
 
-            if (hpGeoCheckAnswer(val, art.answers)) {
+            const hpArtOk = hpGeoCheckAnswer(val, art.answers);
+            reportAttempt('Hogwarts: Magical Artifacts', val, hpArtOk);
+
+            if (hpArtOk) {
                 artifactsState.solved[artifactsState.current] = true;
                 artifactsState.score += 10;
                 artifactsState.lastResult = 'correct';
@@ -8989,6 +9083,7 @@
             document.removeEventListener('keydown', tetrisKeyHandler);
             renderTetrisModal();
             const banner = document.getElementById('tetrisMessageBanner');
+            reportAttempt('Tetris round', `${tetrisState.score} points`, true);
             if (isLastLevel) {
                 if (banner) banner.innerHTML = `<div class="tetris-win-msg">\uD83C\uDF89 HIGH SCORE! ${tetrisState.score} points \u2014 all ${task.levels.length} rounds cleared! The road north is yours!</div>`;
                 document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="advanceStep(activeTaskStep)">\uD83C\uDFC1 Complete the Stage ➔</button>`;
@@ -9011,6 +9106,7 @@
             document.removeEventListener('keydown', tetrisKeyHandler);
             renderTetrisModal();
             const banner = document.getElementById('tetrisMessageBanner');
+            reportAttempt('Tetris round', `${tetrisState.score} / ${tetrisState.targetScore} points`, false);
             if (banner) banner.innerHTML = `<div class="tetris-gameover-msg">\uD83D\uDC80 GAME OVER \u2014 ${tetrisState.score} / ${tetrisState.targetScore} points</div>`;
             document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="tetrisBeginRound()">\uD83D\uDD04 Try Again</button>`;
         }
