@@ -2296,7 +2296,20 @@
                        "3\ufe0f\u20e3 For every riddle you fail to guess, you owe that character <strong>one wish</strong> \u2014 and they, not you, get to decide what it is.<br>" +
                        "4\ufe0f\u20e3 Once you're holding both passcodes \u2014 from Kratos <em>and</em> from Witch \u2014 enter them below to continue north.",
                 kratos: { password: 'kratos-olympus-108', solved: false },
-                witch: { password: 'witch-hex-451', solved: false }
+                witch: { password: 'witch-hex-451', solved: false },
+                // Прощальная перепалка — показывается один раз, после того как введены
+                // ОБА пароля, перед тем как локация засчитается пройденной (см. duelStage
+                // 'outro' / proceedToDuelOutro() в движке ниже).
+                outroDialogue: [
+                    { speaker: 'kratos', name: 'Kratos', text: "¡JA! ¿Ves, bruja? Ella resolvió mis acertijos de guerrero sin dudar ni un segundo." },
+                    { speaker: 'witch', name: 'Witch', text: "She solved mine faster, actually. I was quietly impressed. You were just loud about it." },
+                    { speaker: 'kratos', name: 'Kratos', text: "El volumen es una forma de respeto, bruja. En Esparta, gritábamos por amor también." },
+                    { speaker: 'witch', name: 'Witch', text: "That explains so much about your marriage. Historically speaking." },
+                    { speaker: 'kratos', name: 'Kratos', text: "¡Oye! Eso... eso fue un golpe bajo. Hasta para ti." },
+                    { speaker: 'witch', name: 'Witch', text: "Anyway — Lizzy, both passcodes are yours, fair and square. No wishes owed this time." },
+                    { speaker: 'kratos', name: 'Kratos', text: "Sí, sí, vayan. El norte espera. Pero recuerda, niña: ¡la próxima vez, yo elijo acertijos MÁS difíciles!" },
+                    { speaker: 'witch', name: 'Witch', text: "He says that every single time. Go on, sweetheart — San Felipe's all yours now." }
+                ]
             },
 
             // ===================================================================
@@ -2316,6 +2329,27 @@
                 theme: 'chemistry',
                 buttonLabel: 'Enter the Lab',
                 modalTitle: "Stage 22: Guadalupe Valley — The Chemist's Lab",
+                // Персонаж-ведущий этого задания — Rick Sanchez (портрет уже
+                // используется в chemRickBubble() по пути rick.png). Вступительные и
+                // прощальные реплики показываются один раз каждая — до хаба и после
+                // диплома соответственно (см. chemStage 'dialogue'/'outro' в движке).
+                charImg: 'rick.png',
+                charName: 'Rick Sanchez',
+                charClass: 'rick',
+                dialogue: [
+                    { text: "*buuurp* Oh great, another visitor. Lizzy, right? I've heard about you. Apparently you're the reason someone's been asking me weird questions about 'the chemistry of love.' Ugh." },
+                    { text: "Look, I don't do feelings, I do FORMULAS. But turns out — plot twist — they're basically the same thing if you squint and ignore several ethics boards." },
+                    { text: "So here's the deal: five equations, a periodic table that's judging you, and some picture-rebuses I definitely didn't steal from a middle schooler. Solve 'em all." },
+                    { text: "Do good, and I'll print you an actual diploma. Do bad, and, I dunno, I'll turn you into a pickle. Kidding. Mostly." },
+                    { text: "*burp* Alright, enough monologuing — that's Morty's job when he panics. Goggles on. Let's science this thing." }
+                ],
+                outroDialogue: [
+                    { text: "*burp* Okay okay, don't let it go to your head, but that was genuinely solid work. Five for five. No shortcuts, no dimension-hopping to cheat." },
+                    { text: "You know, I've seen love get analyzed in like forty different universes. Most of it's garbage. Yours actually balances on paper, which, statistically? Rare." },
+                    { text: "Don't tell anyone I said that. I have a reputation as a heartless genius to protect, and frankly, so does she — the other version of you, obviously, not you-you." },
+                    { text: "Anyway. Diploma's yours, lab's a mess, I'm never cleaning it. Guadalupe Valley's done with you. Go on, get outta here before I start caring about something else." },
+                    { text: "*burp* ...Congrats, kid. Seriously." }
+                ],
                 intro: "*burp* Well, well \u2014 look who wandered into my lab. Lizzy! Come on in, take a seat, let an old genius drag you back through his wild scientific youth for a minute. Grab some goggles, kid, 'cause we're diving headfirst into chemistry \u2014 and, uh, love, which, turns out, run on pretty much the exact same molecules. Three little experiments stand between you and the rest of this valley: balance my equations, read the periodic table like it's the two of you, and crack a few picture-riddles I left lying around the place. Solve 'em all, and I've got something special waiting for you at the end. Now go on \u2014 science waits for no one.",
                 labTasks: [
                     {
@@ -2877,7 +2911,8 @@
                 data.hpChosenHouseKey = hpChosenHouseKey;
                 data.lessonsDone = task.lessons.map(l => !!l.done);
             } else if (task.type === 'chemistry') {
-                data.chemStage = (chemStage === 'diploma') ? 'diploma' : 'hub';
+                data.chemStage = chemStage;
+                data.chemDialogueLineIndex = chemDialogueLineIndex;
                 data.labTasksDone = task.labTasks.map(lt => !!lt.done);
                 data.labTasksItemsSolved = task.labTasks.map(lt => (lt.items || []).map(it => !!it.solved));
             } else if (task.type === 'mahjong') {
@@ -5112,6 +5147,8 @@
 
             if (duelStage === 'dialogue') {
                 renderDuelDialogueStage(task);
+            } else if (duelStage === 'outro') {
+                renderDuelOutroStage(task);
             } else {
                 renderDuelTaskStage(task);
             }
@@ -5157,6 +5194,64 @@
             }
         }
 
+        // --- Стадия 'outro': прощальная перепалка Ведьмы и Kratos после того, как
+        // оба пароля введены верно — полностью аналогична стадии 'dialogue' выше,
+        // только читает task.outroDialogue и в конце засчитывает локацию (см.
+        // completeDuelStage()). ---
+        function renderDuelOutroStage(task) {
+            const line = task.outroDialogue[duelLineIndex];
+            const isLast = duelLineIndex === task.outroDialogue.length - 1;
+
+            const html = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-witch">
+                            <img src="duel_chars/witch.png" alt="Witch" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-witch">Witch</div>
+                        </div>
+                        <div class="duel-char duel-char-kratos">
+                            <img src="duel_chars/kratos.png" alt="Kratos" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-kratos">Kratos</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-${line.speaker}" onclick="duelNextOutroLine()">
+                        <span class="duel-speaker-label">${line.name}:</span> ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'tap the bubble to continue…'}</div>
+                </div>
+            `;
+            document.getElementById('modal-content').innerHTML = html;
+            document.getElementById('errorMsg').style.display = 'none';
+
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="completeDuelStage()">🏆 Continue Journey ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="duelNextOutroLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function duelNextOutroLine() {
+            const task = tasksData[activeTaskStep];
+            if (duelLineIndex < task.outroDialogue.length - 1) {
+                duelLineIndex++;
+                renderDuelOutroStage(task);
+            }
+        }
+
+        // Вызывается, когда оба пароля введены верно (кнопка "Continue Journey" на
+        // стадии 'task') — переключает на прощальную перепалку, если она задана
+        // (task.outroDialogue), иначе сразу засчитывает локацию по-старому.
+        function proceedToDuelOutro() {
+            const task = tasksData[activeTaskStep];
+            if (task.outroDialogue && task.outroDialogue.length) {
+                duelStage = 'outro';
+                duelLineIndex = 0;
+                renderDuelModal();
+            } else {
+                alert("🎉 Kratos and Witch both nod in respect — you've earned your way past San Felipe!");
+                advanceStep(activeTaskStep);
+            }
+        }
+
         function startDuelChallenge() {
             duelStage = 'task';
             renderDuelModal();
@@ -5188,7 +5283,7 @@
 
             const bothSolved = task.kratos.solved && task.witch.solved;
             const actionBtnHtml = bothSolved
-                ? `<button class="action-btn" onclick="completeDuelStage()">Continue Journey ➔</button>`
+                ? `<button class="action-btn" onclick="proceedToDuelOutro()">Continue Journey ➔</button>`
                 : `<button class="action-btn locked-status">🔓 Enter both passcodes to proceed</button>`;
             document.getElementById('modal-action').innerHTML = actionBtnHtml;
         }
@@ -5211,7 +5306,7 @@
                 if (btn) btn.style.display = 'none';
 
                 if (task.kratos.solved && task.witch.solved) {
-                    document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="completeDuelStage()">Continue Journey ➔</button>`;
+                    document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="proceedToDuelOutro()">Continue Journey ➔</button>`;
                 }
             } else {
                 statusEl.className = "cipher-status error";
@@ -5220,7 +5315,6 @@
         }
 
         function completeDuelStage() {
-            alert("🎉 Kratos and Witch both nod in respect — you've earned your way past San Felipe!");
             advanceStep(activeTaskStep);
         }
 
@@ -5514,12 +5608,14 @@
         // ===================================================================
         let chemActiveTaskKey = null;   // ключ открытого сейчас labTask ('equations', ...) или null (хаб)
         let chemEqActiveId = null;      // id уравнения, которое сейчас активно (для сброса подсказки при смене)
-        let chemStage = 'hub';          // 'hub' (обычный хаб/задания) или 'diploma' (финальный экран с дипломом)
+        let chemStage = 'hub';          // 'dialogue' (вступление) | 'hub' | 'diploma' | 'outro' (прощание)
+        let chemDialogueLineIndex = 0;
 
         function startChemistryGame() {
             const task = tasksData[activeTaskStep];
             const saved = loadTaskProgress(activeTaskStep, 'chemistry');
             chemActiveTaskKey = null;
+            chemDialogueLineIndex = (saved && typeof saved.chemDialogueLineIndex === 'number') ? saved.chemDialogueLineIndex : 0;
             if (saved) {
                 chemStage = saved.chemStage || 'hub';
                 if (saved.labTasksDone && saved.labTasksDone.length === task.labTasks.length) {
@@ -5532,7 +5628,7 @@
                     });
                 }
             } else {
-                chemStage = 'hub';
+                chemStage = (task.dialogue && task.dialogue.length) ? 'dialogue' : 'hub';
             }
             renderChemistryModal();
             document.getElementById('modalOverlay').classList.add('active');
@@ -5571,12 +5667,95 @@
             const task = tasksData[activeTaskStep];
             document.getElementById('errorMsg').style.display = 'none';
 
-            if (chemStage === 'diploma') {
+            if (chemStage === 'dialogue') {
+                renderChemDialogueStage(task);
+            } else if (chemStage === 'diploma') {
                 renderChemDiploma(task);
+            } else if (chemStage === 'outro') {
+                renderChemOutroStage(task);
             } else if (chemActiveTaskKey === null) {
                 renderChemHub(task);
             } else {
                 renderChemLabTask(task);
+            }
+        }
+
+        // --- Стадии 'dialogue'/'outro': вступительные и прощальные реплики Рика,
+        // до хаба и после диплома соответственно. Переиспользуют .duel-scene/
+        // .duel-char/.duel-speech-bubble (см. движки duel/moviequiz/mahjong), свой
+        // цвет — через модификаторы duel-char-rick/duel-name-rick/duel-speech-rick. ---
+        function renderChemDialogueStage(task) {
+            const line = task.dialogue[chemDialogueLineIndex];
+            const isLast = chemDialogueLineIndex === task.dialogue.length - 1;
+            const cls = task.charClass || 'rick';
+
+            document.getElementById('modal-title').innerText = task.modalTitle;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-${cls}">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-${cls}">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-${cls}" onclick="chemNextDialogueLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'tap the bubble to continue…'}</div>
+                </div>
+            `;
+
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="chemBeginLab()">🧪 Into the Lab ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="chemNextDialogueLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function chemNextDialogueLine() {
+            const task = tasksData[activeTaskStep];
+            if (chemDialogueLineIndex < task.dialogue.length - 1) {
+                chemDialogueLineIndex++;
+                renderChemDialogueStage(task);
+            }
+        }
+
+        function chemBeginLab() {
+            chemStage = 'hub';
+            renderChemistryModal();
+        }
+
+        function renderChemOutroStage(task) {
+            const line = task.outroDialogue[chemDialogueLineIndex];
+            const isLast = chemDialogueLineIndex === task.outroDialogue.length - 1;
+            const cls = task.charClass || 'rick';
+
+            document.getElementById('modal-title').innerText = task.modalTitle;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-${cls}">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-${cls}">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-${cls}" onclick="chemNextOutroLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'tap the bubble to continue…'}</div>
+                </div>
+            `;
+
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="advanceStep(activeTaskStep)">✨ Farewell ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="chemNextOutroLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function chemNextOutroLine() {
+            const task = tasksData[activeTaskStep];
+            if (chemDialogueLineIndex < task.outroDialogue.length - 1) {
+                chemDialogueLineIndex++;
+                renderChemOutroStage(task);
             }
         }
 
@@ -5762,7 +5941,14 @@
         }
 
         function completeChemistryStage() {
-            advanceStep(activeTaskStep);
+            const task = tasksData[activeTaskStep];
+            if (task.outroDialogue && task.outroDialogue.length) {
+                chemStage = 'outro';
+                chemDialogueLineIndex = 0;
+                renderChemistryModal();
+            } else {
+                advanceStep(activeTaskStep);
+            }
         }
 
         // --- Финальный экран: "Smart Chemist" диплом от Рика ---

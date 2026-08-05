@@ -1004,6 +1004,22 @@
             border-color: #c8b400;
         }
 
+        /* --- Локация 22 "The Chemist's Lab" (тип 'chemistry'): один персонаж — Рик
+           (Rick Sanchez). Переиспользует ту же анимацию появления, что и Walter
+           (walterStep), просто с портальной зелёной палитрой. Картинка ожидается
+           по пути rick.png (уже используется как портрет в chemRickBubble). */
+        .duel-char-rick {
+            animation: walterStep 0.8s cubic-bezier(0.3, 0.5, 0.3, 1) forwards;
+        }
+
+        .duel-name-rick {
+            background: #3ecf5e;
+        }
+
+        .duel-speech-bubble.duel-speech-rick {
+            border-color: #3ecf5e;
+        }
+
         /* --- Локация 16 "Book Divination" (тип 'bookdivination'): один персонаж —
            губка-мультяшка с книгой --- */
         /* Переиспользует .duel-scene/.duel-char/.duel-speech-bubble (см. выше), но со своей
