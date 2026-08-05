@@ -2569,6 +2569,153 @@
             }
         }
 
+        // ===================================================================
+        // --- ОБЛАЧНАЯ СИНХРОНИЗАЦИЯ ПРОГРЕССА (телефон <-> компьютер) ---
+        // Прогресс хранится в Firestore, в документе progress/{playerId}.
+        // playerId — это код, введённый на экране входа (#loginOverlay в
+        // index.html, см. submitLoginCode() ниже):
+        //   - HER_CODE (задай свою секретную фразу для неё) -> playerId = 'her',
+        //     единый прогресс, синхронный на всех устройствах, где введён
+        //     именно этот код;
+        //   - любой ДРУГОЙ введённый код -> playerId = сам этот код (лишь
+        //     нормализованный: нижний регистр, пробелы -> дефисы). Так можно
+        //     завести свой собственный код для тестов с разных устройств —
+        //     он будет синхронизироваться сам с собой, но никогда не
+        //     затронет её прогресс.
+        //
+        // НАСТРОЙКА (один раз, займёт 5 минут):
+        //   1. https://console.firebase.google.com -> Add project (бесплатно).
+        //   2. В новом проекте: Build -> Firestore Database -> Create database
+        //      (можно в тестовом режиме — ниже есть рекомендованные правила).
+        //   3. Project settings -> General -> "Your apps" -> Add app -> Web (</>) .
+        //      Скопируй объект firebaseConfig, который там покажут, и вставь
+        //      его вместо заглушки ниже.
+        //   4. В Firestore -> Rules вставь примерно такое (открыто на чтение/
+        //      запись только документов внутри коллекции progress — этого
+        //      достаточно для личного некоммерческого сайта; apiKey ниже НЕ
+        //      секретный, так и задумано у Firebase, — доступ регулируется
+        //      именно этими правилами, а не секретностью ключа):
+        //        rules_version = '2';
+        //        service cloud.firestore {
+        //          match /databases/{database}/documents {
+        //            match /progress/{playerId} {
+        //              allow read, write: if true;
+        //            }
+        //          }
+        //        }
+        //   5. Пока firebaseConfig ниже не заполнен реальными значениями —
+        //      сайт работает как раньше, полностью локально на каждом
+        //      устройстве, без ошибок.
+        // ===================================================================
+        const HER_CODE = 'romy2026'; // <-- поменяй на свою секретную фразу для неё
+        const PLAYER_ID_KEY = 'romanticPlayerId';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsc5DXa1n6i6blWKaMnp9p9ktUnkj4ENQ",
+            authDomain: "romanticadventureforlizzy.firebaseapp.com",
+            projectId: "romanticadventureforlizzy",
+            storageBucket: "romanticadventureforlizzy.firebasestorage.app",
+            messagingSenderId: "512860166362",
+            appId: "1:512860166362:web:25cb4a937da6e882972de3",
+            measurementId: "G-8L4E4NF98X"
+        };
+
+        let cloudDb = null;
+        let cloudPlayerId = null;
+        let cloudEnabled = false;
+
+        function normalizePlayerCode(raw) {
+            const code = (raw || '').trim().toLowerCase().replace(/\s+/g, '-');
+            return code === HER_CODE.trim().toLowerCase() ? 'her' : code;
+        }
+
+        function initCloud() {
+            try {
+                if (typeof firebase === 'undefined' || !firebaseConfig.apiKey || firebaseConfig.apiKey === 'YOUR_API_KEY') {
+                    // Firebase ещё не подключён/не настроен (см. инструкцию выше) —
+                    // сайт продолжает работать полностью локально, без синхронизации.
+                    cloudEnabled = false;
+                    return;
+                }
+                if (!firebase.apps || !firebase.apps.length) firebase.initializeApp(firebaseConfig);
+                cloudDb = firebase.firestore();
+                cloudEnabled = true;
+            } catch (e) {
+                cloudEnabled = false;
+            }
+        }
+
+        function cloudDocRef() {
+            if (!cloudEnabled || !cloudPlayerId) return null;
+            return cloudDb.collection('progress').doc(cloudPlayerId);
+        }
+
+        async function cloudPull() {
+            const ref = cloudDocRef();
+            if (!ref) return null;
+            try {
+                const snap = await ref.get();
+                return snap.exists ? snap.data() : null;
+            } catch (e) {
+                return null; // офлайн/ошибка сети — просто продолжаем локально
+            }
+        }
+
+        function cloudPushProgress(step) {
+            const ref = cloudDocRef();
+            if (!ref) return;
+            ref.set({ progress: step, updatedAt: Date.now() }, { merge: true }).catch(() => {});
+        }
+
+        function cloudPushTaskState(state) {
+            const ref = cloudDocRef();
+            if (!ref) return;
+            ref.set({ taskState: state, updatedAt: Date.now() }, { merge: true }).catch(() => {});
+        }
+
+        // Вызывается кнопкой на экране входа (#loginOverlay, см. index.html).
+        function submitLoginCode() {
+            const input = document.getElementById('loginCodeInput');
+            const raw = input ? input.value : '';
+            if (!raw || !raw.trim()) return;
+            localStorage.setItem(PLAYER_ID_KEY, raw.trim());
+            document.getElementById('loginOverlay').style.display = 'none';
+            startAppAfterLogin();
+        }
+
+        // Чтобы ввести другой код на этом устройстве (например, разработчику —
+        // переключиться со своего тестового кода на другой, или наоборот).
+        function switchPlayerCode() {
+            localStorage.removeItem(PLAYER_ID_KEY);
+            location.reload();
+        }
+
+        // Подтягивает прогресс из облака (если он там уже есть для этого кода)
+        // и подменяет им локальный currentStep/mexicoRouteTaskState ДО отрисовки
+        // карты — чтобы на новом устройстве сразу открылась актуальная стадия.
+        // Если для этого кода в облаке ещё ничего нет — считается первым входом,
+        // и туда сразу отправляется то, что уже накоплено локально на этом устройстве.
+        async function syncFromCloudOnStartup() {
+            const stored = localStorage.getItem(PLAYER_ID_KEY);
+            cloudPlayerId = stored ? normalizePlayerCode(stored) : null;
+            if (!cloudPlayerId) return;
+            initCloud();
+            if (!cloudEnabled) return;
+            const remote = await cloudPull();
+            if (remote && typeof remote.progress === 'number' && remote.progress >= 1) {
+                currentStep = remote.progress;
+                selectedStep = remote.progress;
+                localStorage.setItem('mexicoRouteProgress', currentStep);
+                if (remote.taskState) {
+                    localStorage.setItem('mexicoRouteTaskState', JSON.stringify(remote.taskState));
+                } else {
+                    localStorage.removeItem('mexicoRouteTaskState');
+                }
+            } else {
+                cloudPushProgress(currentStep);
+            }
+        }
+
         let currentStep = parseInt(localStorage.getItem('mexicoRouteProgress')) || 1;
         let selectedStep = currentStep;
         let currentQuizIndex = 0;
@@ -2645,6 +2792,8 @@
         function resetProgress() {
             localStorage.removeItem('mexicoRouteProgress');
             localStorage.removeItem('mexicoRouteTaskState');
+            cloudPushProgress(1);
+            cloudPushTaskState(null);
             currentStep = 1;
             selectedStep = 1;
             closeModal();
@@ -2709,6 +2858,7 @@
 
             try {
                 localStorage.setItem('mexicoRouteTaskState', JSON.stringify(data));
+                cloudPushTaskState(data);
             } catch (e) { /* напр. переполнение хранилища — тихо игнорируем */ }
         }
 
@@ -2724,6 +2874,7 @@
 
         function clearTaskProgress() {
             localStorage.removeItem('mexicoRouteTaskState');
+            cloudPushTaskState(null);
         }
 
         // Перезагрузка страницы и закрытие вкладки не всегда доходят до closeModal(),
@@ -2822,6 +2973,7 @@
             if (step === currentStep && currentStep < 24) {
                 currentStep++;
                 localStorage.setItem('mexicoRouteProgress', currentStep);
+                cloudPushProgress(currentStep);
             }
             clearTaskProgress();
             closeModal();
@@ -9202,7 +9354,12 @@
             document.getElementById('errorMsg').style.display = 'none';
         }
 
-        window.addEventListener('load', () => {
+        // Основная инициализация — вынесена в отдельную функцию, потому что
+        // ждать её нужно из ДВУХ мест: обычной загрузки страницы (когда код
+        // на этом устройстве уже вводили раньше, см. PLAYER_ID_KEY) и кнопки
+        // на экране входа submitLoginCode() (когда код вводят прямо сейчас).
+        async function startAppAfterLogin() {
+            await syncFromCloudOnStartup();
             localStorage.removeItem('hogwartsHouse');
             updateProgressUI();
             updateMapDisplay();
@@ -9210,6 +9367,23 @@
             // видна сразу, а не скрыта за развёрнутой шторкой заданий (на мобильных —
             // шторка остаётся свёрнута внизу, "хвостиком", как и задумано).
             selectLocation(currentStep, false);
+            // Прогресс мог подтянуться из облака и отличаться от той локальной
+            // догадки, которую инлайн-скрипт в index.html уже использовал, чтобы
+            // мгновенно показать/скрыть интро без "мигания" — сверяемся ещё раз.
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('intro') !== '1') {
+                document.getElementById('introOverlay').style.display = currentStep > 1 ? 'none' : 'flex';
+            }
+        }
+
+        window.addEventListener('load', () => {
+            // Если код уже вводили на этом устройстве раньше — #loginOverlay уже
+            // скрыт мгновенным инлайн-скриптом в index.html, можно сразу стартовать.
+            // Если ещё нет — экран входа виден, и startAppAfterLogin() запустится
+            // из submitLoginCode() сразу после того, как код будет введён.
+            if (localStorage.getItem(PLAYER_ID_KEY)) {
+                startAppAfterLogin();
+            }
         });
         window.addEventListener('resize', updateMapDisplay);
         setTimeout(updateMapDisplay, 150);

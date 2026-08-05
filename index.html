@@ -11,6 +11,37 @@
 </head>
 <body>
 
+    <!-- ===================================================================
+         ЭКРАН ВХОДА / СИНХРОНИЗАЦИЯ ПРОГРЕССА МЕЖДУ УСТРОЙСТВАМИ
+         Показывается один раз на каждом НОВОМ устройстве/браузере (дальше
+         код запоминается в localStorage этого устройства и экран больше не
+         появляется). Код связывает устройство с "профилем" прогресса в
+         облаке (см. Firestore-синхронизацию в script.js): один и тот же код,
+         введённый на телефоне и на компьютере — одинаковый прогресс на обоих;
+         любой другой код (например, свой, для тестов) — отдельный, никак не
+         пересекающийся с чужим прогресс. Видимость управляется мгновенно
+         инлайн-скриптом ниже (по localStorage), чтобы не было "мигания" на
+         каждой обычной загрузке страницы у того, кто код уже вводил.
+         =================================================================== -->
+    <div class="login-overlay" id="loginOverlay">
+        <div class="login-card">
+            <h2>Welcome, traveler</h2>
+            <p>Enter your code to continue your journey. The same code on your phone and your computer keeps your progress in sync between them.</p>
+            <input type="text" id="loginCodeInput" class="login-input" placeholder="Your code" autocomplete="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter'){submitLoginCode();}">
+            <button class="login-btn" onclick="submitLoginCode()">Continue ➔</button>
+            <div class="login-hint">First time here? Just make one up — you'll use the same one next time to keep your progress.</div>
+        </div>
+    </div>
+    <script>
+        (function () {
+            // Мгновенная (без ожидания полной загрузки) проверка: код на этом
+            // устройстве уже вводили раньше — сразу скрываем экран входа.
+            if (localStorage.getItem('romanticPlayerId')) {
+                document.getElementById('loginOverlay').style.display = 'none';
+            }
+        })();
+    </script>
+
     <div class="intro-overlay" id="introOverlay">
         <!-- Этап 1: жуткое видео -->
         <div class="intro-stage intro-stage-video" id="introStageVideo">
@@ -113,17 +144,20 @@
 
         <!-- Правая панель -->
         <div class="sidebar" id="sidebarPanel">
-            <div class="sidebar-drag-handle" id="sidebarDragHandle" onclick="toggleMobileSidebar()"></div>
-            <h1>Romantic Adventure</h1>
-            
-            <div class="progress-container">
-                <div class="progress-text" id="progressText">Completed: 0 of 24 (0%)</div>
-                <div class="progress-bar-bg">
-                    <div class="progress-bar-fill" id="progressBarFill"></div>
+            <div class="sidebar-toggle-zone" id="sidebarToggleZone" onclick="toggleMobileSidebar()">
+                <div class="sidebar-drag-handle" id="sidebarDragHandle"></div>
+                <h1>Romantic Adventure</h1>
+
+                <div class="progress-container">
+                    <div class="progress-text" id="progressText">Completed: 0 of 24 (0%)</div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="progressBarFill"></div>
+                    </div>
                 </div>
             </div>
 
             <button class="action-btn secondary-btn" style="margin-bottom:15px;" onclick="promptResetPassword()">🔒 Reset progress</button>
+            <button class="action-btn secondary-btn" style="margin-bottom:15px;" onclick="switchPlayerCode()">🔄 Switch code / device</button>
 
             <div class="location-card">
                 <h2 id="sidebar-title">Select a stage</h2>
@@ -150,6 +184,14 @@
             </div>
         </div>
     </div>
+
+    <!-- Firebase (только Firestore, для облачной синхронизации прогресса между
+         устройствами) — загружается ДО script.js. Если строки firebaseConfig
+         в script.js ещё не заполнены реальными значениями из твоего проекта
+         Firebase, сайт продолжает работать полностью локально, как раньше —
+         эти скрипты просто не используются. -->
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
 
     <script src="script.js"></script>
 </body>
