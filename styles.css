@@ -1337,6 +1337,77 @@
             border-color: #c9713f;
         }
 
+        /* --- Локация 20 "Rocky Point Arcade — Tetris": вступление WALL·E --- */
+        /* Переиспользует .duel-scene/.duel-char/.duel-speech-bubble (см. выше), один
+           персонаж-портрет с модификаторами duel-char-walle/duel-name-walle/
+           duel-speech-walle — ржаво-жёлтая палитра под цвет самого WALL·E. Картинка
+           ожидается по пути tetris_chars/walle.png (см. tasksData[20].charImg). */
+        .duel-char-walle {
+            animation: remyStep 0.65s ease-out forwards;
+        }
+
+        .duel-name-walle {
+            background: #8a5a1e;
+        }
+
+        .duel-speech-bubble.duel-speech-walle {
+            border-color: #d99a3f;
+        }
+
+        /* --- Локация 20 "Rocky Point Arcade — Tetris": прощальная сцена WALL·E и EVE --- */
+        /* В отличие от duel-scene (аватар + бабл), тут сама иллюстрация уже показывает
+           обоих персонажей вместе (task.outroScenes), поэтому картинка выводится крупно
+           на всю ширину, а реплика-подпись — отдельным блоком под ней. Смена картинки
+           между репликами (see task.outroDialogue[i].scene) — просто мягкий fade. */
+        .tetris-outro-scene {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            padding: 6px 4px 4px;
+        }
+
+        .tetris-outro-img {
+            max-width: 100%;
+            max-height: 260px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.35));
+            animation: tetrisOutroFadeIn 0.5s ease-out;
+        }
+
+        @keyframes tetrisOutroFadeIn {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .tetris-outro-bubble {
+            width: 100%;
+            max-width: 480px;
+            background: rgba(10, 4, 20, 0.55);
+            border: 2px solid #00f0ff;
+            border-radius: 14px;
+            padding: 12px 18px;
+            cursor: pointer;
+            box-shadow: 0 0 18px rgba(0, 240, 255, 0.25);
+        }
+
+        .tetris-outro-speaker {
+            font-family: 'Press Start 2P', 'Fredoka', monospace;
+            font-size: 11px;
+            color: #00f0ff;
+            text-shadow: 0 0 6px rgba(0, 240, 255, 0.6);
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .tetris-outro-text {
+            color: #eafcff;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
         .theme-whale .disney-input {
             border: 2px solid #bfeaf0;
             background: rgba(255, 255, 255, 0.12);
@@ -1574,6 +1645,22 @@
             color: #ffd3ba;
             margin-bottom: 6px;
         }
+
+        /* ===================== СЕРТИФИКАТ — экран finaleStage === 'certificate' =====================
+           Та же схема, что у .theme-hogwarts.hp-modal-diploma / .theme-chemistry.chem-modal-diploma:
+           модалка темнеет под цвет "пергамента", а сам сертификат переиспользует общие
+           .hp-diploma-* классы. */
+        .theme-finale.finale-modal-diploma {
+            background: linear-gradient(160deg, #3a1c10 0%, #1c0d07 100%);
+            border-color: #e0925a;
+            box-shadow: 0 20px 70px rgba(0,0,0,0.75);
+        }
+        .theme-finale.finale-modal-diploma .modal-header h2 {
+            color: #ffe3d0;
+            text-shadow: 0 0 10px rgba(224, 146, 90, 0.5);
+            border-bottom-color: rgba(224, 146, 90, 0.35);
+        }
+        .theme-finale.finale-modal-diploma .modal-close { color: #ffcaa6; }
 
         .finale-coords-value {
             font-family: 'Georgia', serif;
@@ -6635,8 +6722,9 @@
         @media print {
             body * { visibility: hidden; }
             #hpDiplomaCard, #hpDiplomaCard *,
-            #chemDiplomaCard, #chemDiplomaCard * { visibility: visible; }
-            #hpDiplomaCard, #chemDiplomaCard {
+            #chemDiplomaCard, #chemDiplomaCard *,
+            #finaleCertCard, #finaleCertCard * { visibility: visible; }
+            #hpDiplomaCard, #chemDiplomaCard, #finaleCertCard {
                 position: fixed;
                 top: 0;
                 left: 0;

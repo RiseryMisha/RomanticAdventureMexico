@@ -1764,6 +1764,23 @@
                 theme: 'ratatouille',
                 buttonLabel: 'Maze',
                 modalTitle: "Stage 14: Remy's Cheese Chase",
+                // Персонаж-ведущий этого задания — снова Remy (уже встречался в локации 11,
+                // те же карточка/картинка). Приветственные и прощальные реплики показываются
+                // один раз каждая — до самого лабиринта и после него соответственно
+                // (см. mzStage 'dialogue'/'outro' в движке ниже). Картинка: ratatouille_chars/remy.png.
+                charImg: 'ratatouille_chars/remy.png',
+                charName: 'Remy',
+                dialogue: [
+                    { text: "\u00a1Lizzy! \u00bfSabes qu\u00e9? Quiero cocinar algo delicioso para ti otra vez \u2014 pero mi hermano Emile se comi\u00f3 absolutamente TODO lo que tenía en la cocina. Otra vez. Increíble, \u00bfverdad?" },
+                    { text: "Así que voy a empezar de cero. Y para lo que tengo en mente, necesito muuucho queso \u2014 no un pedacito, ¡todo un banquete de queso!" },
+                    { text: "El problema es que Misha lo escondió en alg\u00fan lugar de estas llanuras, en un lugar bastante enredado, la verdad. Típico de él." },
+                    { text: "\u00bfMe ayudas a encontrarlo? Sígueme con las flechitas \u2190\u2191\u2192\u2193 \u2014 entre los dos seguro llegamos hasta el queso." }
+                ],
+                outroDialogue: [
+                    { text: "\u00a1Lo logramos! Mira toda esta cantidad de queso \u2014 esto sí que es un banquete digno de una gran cena." },
+                    { text: "Gracias, Lizzy. De verdad. Ahora sí puedo cocinar algo digno de ti \u2014 y esta vez pienso esconder un pedacito de Emile, por si las moscas." },
+                    { text: "Ve con cuidado por las llanuras de Coahuila. Y cuando quieras volver a probar mi cocina, ya sabes d\u00f3nde encontrarme." }
+                ],
                 intro: "Somewhere out on the Coahuila plains, our favorite little chef has followed his nose a bit too far from the kitchen. Guide Remy through the maze with the arrow keys \u2190\u2191\u2192\u2193 and help him reach the cheese! There are 5 mazes to clear — the first three grow bigger, and the last two hold their ground but hide trickier turns and false paths than the one before.",
                 // Уровни 1-3: каждый крупнее предыдущего (больше клеток → длиннее путь и
                 // больше тупиков → сложнее), а размер клетки чуть уменьшается, чтобы лабиринт
@@ -2251,6 +2268,35 @@
                 theme: 'tetris',
                 buttonLabel: 'Tetris',
                 modalTitle: 'Rocky Point Arcade — Tetris',
+                // Персонаж-ведущий вступления — WALL·E (одна картинка-портрет, реплики
+                // кликом по бабблу, полностью аналогично dialogue у duel/whale/chemistry).
+                // Картинка: tetris_chars/walle.png.
+                charImg: 'tetris_chars/walle.png',
+                charName: 'WALL·E',
+                dialogue: [
+                    { text: "\u00a1Hola, Lizzy! Qu\u00e9 bueno encontrarte aqu\u00ed en el paseo mar\u00edtimo." },
+                    { text: "Voy MUY tarde \u2014 tengo una cita con EVE y no puedo llegar tarde otra vez, de verdad." },
+                    { text: "Pero esta vieja m\u00e1quina de Tetris no me deja pasar. Las piezas simplemente no dejan de caer, y no s\u00e9 c\u00f3mo vencerla yo solito." },
+                    { text: "\u00bfMe ayudas a superarla? Si lo logras, por fin podr\u00e9 llegar a mi cita \u2014 aunque, conociéndome, seguro igual llego tarde." }
+                ],
+                // Прощальные реплики после Тетриса — переключаются между двумя сценами
+                // (task.outroScenes: 'together' — WALL·E и EVE вдвоём, 'gift' — WALL·E
+                // дарит подарок). Каждая реплика dialogue-объекта указывает свою сцену
+                // через поле scene. Движок: renderTetrisOutroStage()/tetrisNextOutroLine()
+                // в разделе "ДВИЖОК: ТЕТРИС" ниже — картинка на весь экран + реплика-подпись,
+                // а не привычный маленький аватар duel-char (иллюстрации уже показывают
+                // обоих персонажей вместе). Картинки: tetris_chars/walle_eve.png,
+                // tetris_chars/walle_eve_gift.png.
+                outroScenes: {
+                    together: 'tetris_chars/walle_eve.png',
+                    gift: 'tetris_chars/walle_eve_gift.png'
+                },
+                outroDialogue: [
+                    { scene: 'together', speaker: 'EVE', text: "WALL·E, como siempre... llegando tarde. La verdad es que te pareces mucho a Lizzy en eso." },
+                    { scene: 'together', speaker: 'WALL·E', text: "Lo s\u00e9, lo s\u00e9... pero mira, te traje algo. Tengo un regalo para ti." },
+                    { scene: 'gift', speaker: 'EVE', text: "Aun as\u00ed, tarde y todo... te amo, WALL·E. Siempre." },
+                    { scene: 'gift', speaker: 'WALL·E & EVE', text: "¡Gracias, Lizzy! Sin ti no lo habr\u00edamos logrado. ¡Buena suerte en el resto del viaje!" }
+                ],
                 intro: "A dusty old arcade cabinet glows on the boardwalk at Rocky Point, its screen flickering with neon light. A hand-written sign taped to the glass reads: \"Beat my high score and the road north is yours.\" Only one way to find out what's waiting on the other side of the score counter\u2026",
                 levels: [
                     { targetScore: 700, startLevel: 1, name: "Round 1: Warm-Up" },
@@ -2463,6 +2509,16 @@
                 signaturePlaceholder: 'Type your name to sign…',
                 signLabel: '🐋 Sign the Pledge 🐋',
                 completeMessage: '🐋 Rizzy gives a happy splash and a big whale smile — the way to Rosarito is open!',
+                // Прощальные реплики Rizzy — показываются один раз, после подписи обещания,
+                // перед тем как локация засчитается пройденной (см. whaleStage 'outro' /
+                // completeWhaleStage() в движке ниже).
+                outroDialogue: [
+                    { text: "Firmado y sellado. Puedo sentir la promesa vibrando en el agua — así de fuerte es." },
+                    { text: "Guarda bien esas palabras, Lizzy. Dentro de un año, cuando abras la carta, quiero que te acuerdes de esta laguna y de esta ballena parlanchina." },
+                    { text: "Rosarito ya casi es tuya. Sólo un tramo más de costa, y ahí es donde termina este viaje tan enorme… aunque, entre nosotros, sospecho que en realidad ahí es donde empieza otro." },
+                    { text: "Nada con cuidado, nada con el corazón abierto. Misha te está esperando en la orilla." },
+                    { text: "¡Buen viaje, Lizzy! Esta ballena se queda aquí, meciéndose entre las olas — pero contigo, siempre." }
+                ],
                 solved: false
             },
 
@@ -2809,6 +2865,8 @@
         // Индекс текущего раунда в task.levels (0-based) — сколько раундов Тетриса
         // из 3-х уже начато/пройдено в этой попытке (см. tasksData[20].levels).
         let trLevelIndex = 0;
+        let trDialogueLineIndex = 0;
+        let trOutroLineIndex = 0;
         let tetrisDropTimerId = null;
         let mjSelectedTile = null;
         let mjShuffleUsed = false;
@@ -2987,8 +3045,12 @@
         }
 
         function selectLocation(step, autoExpand) {
-            selectedStep = step;
-            const data = locationsData[step];
+            // Локаций после 24-й нет (locationsData заканчивается на ней), но currentStep
+            // может стать 25, когда весь квест пройден — в этом случае просто показываем
+            // саму 24-ю локацию (уже завершённую, см. ветку step < currentStep ниже).
+            const displayStep = locationsData[step] ? step : 24;
+            selectedStep = displayStep;
+            const data = locationsData[displayStep];
             if (!data) return;
 
             if (autoExpand !== false) expandMobileSidebar();
@@ -2997,26 +3059,26 @@
 
             const sidebarImg = document.getElementById('sidebar-img');
             sidebarImg.style.display = 'block';
-            sidebarImg.src = `Icons/${step}.png`;
+            sidebarImg.src = `Icons/${displayStep}.png`;
 
             if (typewriterTimeout) clearTimeout(typewriterTimeout);
             typeWriterEffect(data.history, 'sidebar-desc', 0);
 
             let actionHTML = "";
-            if (step === currentStep && currentStep <= 24) {
-                const task = tasksData[step];
+            if (displayStep === currentStep && currentStep <= 24) {
+                const task = tasksData[displayStep];
                 if (task) {
-                    actionHTML = `<button class="action-btn" onclick="startTaskForStep(${step})">Start ${task.buttonLabel} ➔</button>`;
+                    actionHTML = `<button class="action-btn" onclick="startTaskForStep(${displayStep})">Start ${task.buttonLabel} ➔</button>`;
                 } else {
-                    actionHTML = `<button class="action-btn" onclick="completeStepDirectly(${step})">Complete Stage ➔</button>`;
+                    actionHTML = `<button class="action-btn" onclick="completeStepDirectly(${displayStep})">Complete Stage ➔</button>`;
                 }
-                actionHTML += `<button class="action-btn secondary-btn" onclick="promptPassword(${step})">🔑 Enter Password</button`;
-            } else if (step < currentStep) {
+                actionHTML += `<button class="action-btn secondary-btn" onclick="promptPassword(${displayStep})">🔑 Enter Password</button`;
+            } else if (displayStep < currentStep) {
                 actionHTML = `<button class="action-btn completed-status">✅ Stage Completed</button>`;
             } else {
                 actionHTML = `<button class="action-btn locked-status">🔒 Stage Locked</button>`;
-                if (step === currentStep) {
-                    actionHTML += `<button class="action-btn secondary-btn" onclick="promptPassword(${step})">🔑 Enter Password</button`;
+                if (displayStep === currentStep) {
+                    actionHTML += `<button class="action-btn secondary-btn" onclick="promptPassword(${displayStep})">🔑 Enter Password</button`;
                 }
             }
             document.getElementById('sidebar-action').innerHTML = actionHTML;
@@ -3039,7 +3101,7 @@
         // step — какую локацию засчитать пройденной (продвигаем currentStep, только если
         // это и есть текущий незавершённый шаг — так нельзя случайно "перепрыгнуть" вперёд).
         function advanceStep(step) {
-            if (step === currentStep && currentStep < 24) {
+            if (step === currentStep && currentStep < 25) {
                 currentStep++;
                 localStorage.setItem('mexicoRouteProgress', currentStep);
                 cloudPushProgress(currentStep);
@@ -3048,7 +3110,15 @@
             closeModal();
             updateProgressUI();
             updateMapDisplay();
-            selectLocation(currentStep);
+            // После локации 24 (финал) currentStep становится 25 — своей локации у него
+            // нет (locationsData заканчивается на 24), поэтому selectLocation тут не
+            // вызываем: боковая панель просто остаётся на уже показанной 24-й локации
+            // (там она отобразится как "✅ Stage Completed").
+            if (locationsData[currentStep]) {
+                selectLocation(currentStep);
+            } else {
+                selectLocation(24, false);
+            }
         }
 
         // Единственное место, где нужно дописать ветку при появлении НОВОГО типа задания
@@ -3860,6 +3930,8 @@
         let mzLevelIndex = 0;
         let mzWon = false;
         let mzFacing = 'right'; // визуальный разворот Реми по направлению движения
+        let mzDialogueLineIndex = 0;
+        let mzOutroLineIndex = 0;
 
         // opts.straightBias (0..1) — вероятность, с которой при развилке движок
         // предпочтёт продолжить в том же направлении, что и на предыдущем шаге (когда
@@ -3949,10 +4021,54 @@
         }
 
         function startMazeGame() {
+            const task = tasksData[activeTaskStep];
             mzLevelIndex = 0;
             mzTotalMoves = 0;
-            renderMazeIntro();
+            mzDialogueLineIndex = 0;
             document.getElementById('modalOverlay').classList.add('active');
+            if (task.dialogue && task.dialogue.length) {
+                renderMazeDialogueStage();
+            } else {
+                renderMazeIntro();
+            }
+        }
+
+        // Приветственная реплика Реми — показывается один раз, до самого лабиринта
+        // (полностью аналогично dialogue у duel/whale/chemistry). Переиспользует
+        // .duel-scene/.duel-char/.duel-speech-bubble с модификатором duel-*-remy
+        // (уже есть в styles.css — использовался в локации 11).
+        function renderMazeDialogueStage() {
+            const task = tasksData[activeTaskStep];
+            const line = task.dialogue[mzDialogueLineIndex];
+            const isLast = mzDialogueLineIndex === task.dialogue.length - 1;
+            document.getElementById('modal-title').innerText = task.modalTitle;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-remy">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-remy">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-remy" onclick="mzNextDialogueLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'toca la burbuja para continuar…'}</div>
+                </div>
+            `;
+            document.getElementById('errorMsg').style.display = 'none';
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="renderMazeIntro()">🧀 Help Remy Find the Cheese ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="mzNextDialogueLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function mzNextDialogueLine() {
+            const task = tasksData[activeTaskStep];
+            if (mzDialogueLineIndex < task.dialogue.length - 1) {
+                mzDialogueLineIndex++;
+                renderMazeDialogueStage();
+            }
         }
 
         function renderMazeIntro() {
@@ -4096,7 +4212,11 @@
                 if (banner) {
                     banner.innerHTML = `<div class="rat-win">🎉 "Anyone can cook" — and Remy just proved it! All ${task.levels.length} mazes cleared in ${mzTotalMoves} steps total.</div>`;
                 }
-                document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="advanceStep(activeTaskStep)">🏁 Complete the Stage ➔</button>`;
+                if (task.outroDialogue && task.outroDialogue.length) {
+                    document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="mzStartOutro()">🏁 Complete the Stage ➔</button>`;
+                } else {
+                    document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="advanceStep(activeTaskStep)">🏁 Complete the Stage ➔</button>`;
+                }
             } else {
                 const nextLevel = task.levels[mzLevelIndex + 1];
                 if (banner) {
@@ -4109,6 +4229,46 @@
         function mzNextLevel() {
             mzLevelIndex++;
             startMazeLevel();
+        }
+
+        // Прощальная реплика Реми — показывается один раз после всех 5 лабиринтов,
+        // перед тем как локация засчитается пройденной (см. advanceStep в конце).
+        function mzStartOutro() {
+            mzOutroLineIndex = 0;
+            renderMazeOutroStage();
+        }
+
+        function renderMazeOutroStage() {
+            const task = tasksData[activeTaskStep];
+            const line = task.outroDialogue[mzOutroLineIndex];
+            const isLast = mzOutroLineIndex === task.outroDialogue.length - 1;
+            document.getElementById('modal-title').innerText = task.modalTitle;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-remy">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-remy">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-remy" onclick="mzNextOutroLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'toca la burbuja para continuar…'}</div>
+                </div>
+            `;
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="advanceStep(activeTaskStep)">🏁 Complete the Stage ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="mzNextOutroLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function mzNextOutroLine() {
+            const task = tasksData[activeTaskStep];
+            if (mzOutroLineIndex < task.outroDialogue.length - 1) {
+                mzOutroLineIndex++;
+                renderMazeOutroStage();
+            }
         }
 
         function mzRestartLevel() {
@@ -5326,12 +5486,14 @@
         // + одно поле пароля — пароль выдаётся вручную, когда письмо реально написано.
         let whaleStage = 'dialogue';
         let whaleLineIndex = 0;
+        let whaleOutroLineIndex = 0;
 
         function startWhaleGame() {
             const task = tasksData[activeTaskStep];
             task.solved = false;
             whaleStage = 'dialogue';
             whaleLineIndex = 0;
+            whaleOutroLineIndex = 0;
             renderWhaleModal();
             document.getElementById('modalOverlay').classList.add('active');
         }
@@ -5343,6 +5505,8 @@
 
             if (whaleStage === 'dialogue') {
                 renderWhaleDialogueStage(task);
+            } else if (whaleStage === 'outro') {
+                renderWhaleOutroStage(task);
             } else {
                 renderWhaleTaskStage(task);
             }
@@ -5445,8 +5609,48 @@
 
         function completeWhaleStage() {
             const task = tasksData[activeTaskStep];
-            alert(task.completeMessage || "🐋 Rizzy is happy — the way forward is open!");
-            advanceStep(activeTaskStep);
+            if (task.outroDialogue && task.outroDialogue.length) {
+                whaleOutroLineIndex = 0;
+                whaleStage = 'outro';
+                renderWhaleModal();
+            } else {
+                alert(task.completeMessage || "🐋 Rizzy is happy — the way forward is open!");
+                advanceStep(activeTaskStep);
+            }
+        }
+
+        function renderWhaleOutroStage(task) {
+            const line = task.outroDialogue[whaleOutroLineIndex];
+            const isLast = whaleOutroLineIndex === task.outroDialogue.length - 1;
+
+            const html = `
+                <div class="duel-scene whale-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-rizzy">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-rizzy">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-rizzy" onclick="whaleNextOutroLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'toca la burbuja para continuar…'}</div>
+                </div>
+            `;
+            document.getElementById('modal-content').innerHTML = html;
+
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="advanceStep(activeTaskStep)">🐋 Swim to Rosarito ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="whaleNextOutroLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function whaleNextOutroLine() {
+            const task = tasksData[activeTaskStep];
+            if (whaleOutroLineIndex < task.outroDialogue.length - 1) {
+                whaleOutroLineIndex++;
+                renderWhaleOutroStage(task);
+            }
         }
 
         // --- ДВИЖОК: ФИНАЛ (тип 'finale', локация 24 — Rosarito) ---
@@ -5480,6 +5684,8 @@
                 renderFinaleTaskStage(task);
             } else if (finaleStage === 'dialogue2') {
                 renderFinaleDialogueStage(task, task.dialogue2, 'final', '📍 See the coordinates ➔');
+            } else if (finaleStage === 'certificate') {
+                renderFinaleCertificateStage(task);
             } else {
                 renderFinaleFinalStage(task);
             }
@@ -5590,7 +5796,117 @@
                 </div>
             `;
             document.getElementById('modal-content').innerHTML = html;
-            document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="closeModal()">Close ➔</button>`;
+            document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="goFinaleStage('certificate')">🎓 Claim Your Certificate ➔</button>`;
+        }
+
+        // --- Финальный экран: сертификат за прохождение ВСЕГО квеста целиком —
+        // открывается кнопкой "🎓 Claim Your Certificate" с экрана координат.
+        // Паттерн печати в PDF полностью повторяет hpDiplomaHTML/chemDiplomaHTML
+        // (см. #hpDiplomaCard/#chemDiplomaCard) — window.print() + правило
+        // @media print для #finaleCertCard в styles.css.
+        // Кнопка "Continue" здесь — единственное место, где локация 24 наконец
+        // засчитывается пройденной (advanceStep), поэтому именно тут прогресс
+        // квеста доходит до 24 из 24 и финиш фиксируется в localStorage.
+        function renderFinaleCertificateStage(task) {
+            document.getElementById('modalWindow').classList.add('finale-modal-diploma');
+            document.getElementById('modal-title').innerText = 'Certificate of Completion';
+            document.getElementById('modal-content').innerHTML = finaleCertificateHTML(task);
+            document.getElementById('modal-action').innerHTML = `
+                <button class="action-btn secondary-btn" onclick="window.print()">⬇️ Save as PDF</button>
+                <button class="action-btn" onclick="finishFinaleQuest()">✨ Finish the Adventure ➔</button>
+            `;
+        }
+
+        function finishFinaleQuest() {
+            advanceStep(activeTaskStep);
+        }
+
+        function finaleCertificateHTML(task) {
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+            return `
+                <div class="hp-diploma-wrap">
+                    <div class="hp-diploma-card" id="finaleCertCard">
+                        ${finaleCertificateBorderSVG()}
+                        <div class="hp-diploma-inner">
+                            <div class="hp-diploma-crest">✨ 🌅 ✨</div>
+                            <div class="hp-diploma-school">The Great Mexico Road Trip</div>
+                            <div class="hp-diploma-title">Certificate of Completion</div>
+                            <div class="hp-diploma-divider">✦ ✦ ✦</div>
+                            <p class="hp-diploma-body">
+                                This is to certify that
+                            </p>
+                            <div class="hp-diploma-name">Lizzet Cruz</div>
+                            <p class="hp-diploma-body">
+                                has travelled all 24 stages of this journey across Mexico \u2014 from Mexico City to
+                                Rosarito \u2014 crossing deserts, solving riddles, outwitting witches and warriors, graduating
+                                Hogwarts, balancing equations of the heart, and finally reaching this shore \u2014 and is
+                                hereby declared the winner of this whole romantic quest, first class, with full honors.
+                            </p>
+                            <p class="hp-diploma-personal">
+                                Every stage of this trip was a little love letter to you, Lizzy. Thank you for playing
+                                along, for laughing at my terrible riddles, and for making it all the way to Rosarito.
+                                I love you so, so much \u2014 here's to everything still ahead of us.
+                            </p>
+                            <div class="hp-diploma-signatures">
+                                <div class="hp-diploma-sig">
+                                    <div class="hp-diploma-sig-line">Misha</div>
+                                    <div class="hp-diploma-sig-role">Your travel guide</div>
+                                </div>
+                                <div class="hp-diploma-sig">
+                                    <div class="hp-diploma-sig-line hp-diploma-sig-cursive">With all my heart</div>
+                                    <div class="hp-diploma-sig-role">Rosarito, Mexico</div>
+                                </div>
+                            </div>
+                            <div class="hp-diploma-date">${dateStr}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Декоративная рамка итогового сертификата — та же схема, что у
+        // hpDiplomaBorderSVG/chemDiplomaBorderSVG (тонкая рамка + 4 звезды по углам),
+        // но в углах — сердце, булавка на карте, компас и солнце (тема дороги/пути).
+        function finaleCertificateBorderSVG() {
+            return `
+                <svg class="hp-diploma-border" viewBox="0 0 600 760" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="14" y="14" width="572" height="732" fill="none" stroke="#c46a3c" stroke-width="3"/>
+                    <rect x="22" y="22" width="556" height="716" fill="none" stroke="#e0925a" stroke-width="1.2"/>
+                    <g fill="#e0925a">
+                        <path d="M40 40 l4 10 10 1 -7.5 7 2 10 -8.5 -5.5 -8.5 5.5 2 -10 -7.5 -7 10 -1 z" transform="translate(0,0) scale(0.9)"/>
+                        <path d="M560 40 l4 10 10 1 -7.5 7 2 10 -8.5 -5.5 -8.5 5.5 2 -10 -7.5 -7 10 -1 z" transform="translate(520,0) scale(0.9)"/>
+                        <path d="M40 40 l4 10 10 1 -7.5 7 2 10 -8.5 -5.5 -8.5 5.5 2 -10 -7.5 -7 10 -1 z" transform="translate(0,690) scale(0.9)"/>
+                        <path d="M560 40 l4 10 10 1 -7.5 7 2 10 -8.5 -5.5 -8.5 5.5 2 -10 -7.5 -7 10 -1 z" transform="translate(520,690) scale(0.9)"/>
+                    </g>
+                    <!-- сердце, левый верх -->
+                    <g transform="translate(46, 52)" fill="#c46a3c" stroke="none">
+                        <path d="M12 22 C-6 10 -2 -4 10 0 C12 1 12 1 14 0 C26 -4 30 10 12 22 Z"/>
+                    </g>
+                    <!-- булавка на карте, правый верх -->
+                    <g transform="translate(540, 46)" fill="none" stroke="#a5561f" stroke-width="2.4" stroke-linejoin="round">
+                        <path d="M12 0 a12 12 0 0 1 12 12 c0 9 -12 22 -12 22 s-12 -13 -12 -22 a12 12 0 0 1 12 -12 z"/>
+                        <circle cx="12" cy="12" r="4" fill="#a5561f" stroke="none"/>
+                    </g>
+                    <!-- компас, левый низ -->
+                    <g transform="translate(40, 674)" fill="none" stroke="#a5561f" stroke-width="2">
+                        <circle cx="14" cy="14" r="15"/>
+                        <path d="M14 4 L18 14 L14 24 L10 14 Z" fill="#c46a3c" stroke="none"/>
+                    </g>
+                    <!-- солнце, правый низ -->
+                    <g transform="translate(540, 674)" fill="none" stroke="#a5561f" stroke-width="2">
+                        <circle cx="14" cy="14" r="8"/>
+                        <line x1="14" y1="-4" x2="14" y2="2"/>
+                        <line x1="14" y1="26" x2="14" y2="32"/>
+                        <line x1="-4" y1="14" x2="2" y2="14"/>
+                        <line x1="26" y1="14" x2="32" y2="14"/>
+                        <line x1="4" y1="4" x2="8" y2="8"/>
+                        <line x1="20" y1="20" x2="24" y2="24"/>
+                        <line x1="24" y1="4" x2="20" y2="8"/>
+                        <line x1="8" y1="20" x2="4" y2="24"/>
+                    </g>
+                </svg>
+            `;
         }
 
         // ===================================================================
@@ -9356,9 +9672,57 @@
             const task = tasksData[activeTaskStep];
             const saved = loadTaskProgress(activeTaskStep, 'tetris');
             trLevelIndex = (saved && typeof saved.trLevelIndex === 'number') ? saved.trLevelIndex : 0;
-            document.getElementById('modal-title').innerText = task.modalTitle;
-            renderTetrisIntro();
+            trDialogueLineIndex = 0;
             document.getElementById('modalOverlay').classList.add('active');
+            if (task.dialogue && task.dialogue.length) {
+                renderTetrisDialogueStage();
+            } else {
+                document.getElementById('modal-title').innerText = task.modalTitle;
+                renderTetrisIntro();
+            }
+        }
+
+        // Приветственная реплика WALL·E — показывается один раз, до самого Тетриса
+        // (полностью аналогично dialogue у duel/whale/chemistry). Один персонаж-портрет,
+        // реплики кликом по бабблу — переиспользует .duel-scene/.duel-char/
+        // .duel-speech-bubble с новым модификатором duel-*-walle (см. styles.css).
+        function renderTetrisDialogueStage() {
+            const task = tasksData[activeTaskStep];
+            const line = task.dialogue[trDialogueLineIndex];
+            const isLast = trDialogueLineIndex === task.dialogue.length - 1;
+            document.getElementById('modal-title').innerText = task.modalTitle;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="duel-scene">
+                    <div class="duel-char-row">
+                        <div class="duel-char duel-char-walle">
+                            <img src="${task.charImg}" alt="${task.charName}" onerror="this.style.display='none';">
+                            <div class="duel-name-tag duel-name-walle">${task.charName}</div>
+                        </div>
+                    </div>
+                    <div class="duel-speech-bubble duel-speech-walle" onclick="tetrisNextDialogueLine()">
+                        ${line.text}
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'toca la burbuja para continuar…'}</div>
+                </div>
+            `;
+            document.getElementById('errorMsg').style.display = 'none';
+            const actionHtml = isLast
+                ? `<button class="action-btn" onclick="tetrisBeginFromDialogue()">🕹️ Help WALL·E ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="tetrisNextDialogueLine()">Next ➔</button>`;
+            document.getElementById('modal-action').innerHTML = actionHtml;
+        }
+
+        function tetrisNextDialogueLine() {
+            const task = tasksData[activeTaskStep];
+            if (trDialogueLineIndex < task.dialogue.length - 1) {
+                trDialogueLineIndex++;
+                renderTetrisDialogueStage();
+            }
+        }
+
+        function tetrisBeginFromDialogue() {
+            document.getElementById('modal-title').innerText = tasksData[activeTaskStep].modalTitle;
+            renderTetrisIntro();
         }
 
         function renderTetrisIntro() {
@@ -9549,7 +9913,11 @@
             reportAttempt('Tetris round', `${tetrisState.score} points`, true);
             if (isLastLevel) {
                 if (banner) banner.innerHTML = `<div class="tetris-win-msg">\uD83C\uDF89 HIGH SCORE! ${tetrisState.score} points \u2014 all ${task.levels.length} rounds cleared! The road north is yours!</div>`;
-                document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="advanceStep(activeTaskStep)">\uD83C\uDFC1 Complete the Stage ➔</button>`;
+                if (task.outroDialogue && task.outroDialogue.length) {
+                    document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="tetrisStartOutro()">\uD83C\uDFC1 Complete the Stage ➔</button>`;
+                } else {
+                    document.getElementById('modal-action').innerHTML = `<button class="action-btn" onclick="advanceStep(activeTaskStep)">\uD83C\uDFC1 Complete the Stage ➔</button>`;
+                }
             } else {
                 const nextLevel = task.levels[trLevelIndex + 1];
                 if (banner) banner.innerHTML = `<div class="tetris-win-msg">\uD83C\uDF89 ${task.levels[trLevelIndex].name} cleared with ${tetrisState.score} points! Next up: ${nextLevel.name}.</div>`;
@@ -9560,6 +9928,45 @@
         function trNextRound() {
             trLevelIndex++;
             renderTetrisIntro();
+        }
+
+        // Прощальная сцена WALL·E и EVE — показывается один раз, после того как набран
+        // счёт в последнем раунде, перед тем как локация засчитается пройденной. В отличие
+        // от обычного dialogue (один аватар-портрет), тут переключаются целые иллюстрации
+        // (task.outroScenes) — картинки уже показывают обоих персонажей вместе, поэтому
+        // движок рисует полноразмерную сцену + подпись-реплику, а не маленький аватар.
+        function tetrisStartOutro() {
+            trOutroLineIndex = 0;
+            renderTetrisOutroStage();
+        }
+
+        function renderTetrisOutroStage() {
+            const task = tasksData[activeTaskStep];
+            const line = task.outroDialogue[trOutroLineIndex];
+            const isLast = trOutroLineIndex === task.outroDialogue.length - 1;
+            const imgSrc = task.outroScenes[line.scene];
+            document.getElementById('modal-title').innerText = task.modalTitle;
+            document.getElementById('modal-content').innerHTML = `
+                <div class="tetris-outro-scene">
+                    <img class="tetris-outro-img" src="${imgSrc}" alt="${line.speaker}" onerror="this.style.display='none';">
+                    <div class="tetris-outro-bubble" onclick="tetrisNextOutroLine()">
+                        <div class="tetris-outro-speaker">${line.speaker}</div>
+                        <div class="tetris-outro-text">${line.text}</div>
+                    </div>
+                    <div class="duel-hint">${isLast ? '' : 'toca para continuar…'}</div>
+                </div>
+            `;
+            document.getElementById('modal-action').innerHTML = isLast
+                ? `<button class="action-btn" onclick="advanceStep(activeTaskStep)">\uD83D\uDC9B Onward ➔</button>`
+                : `<button class="action-btn secondary-btn" onclick="tetrisNextOutroLine()">Next ➔</button>`;
+        }
+
+        function tetrisNextOutroLine() {
+            const task = tasksData[activeTaskStep];
+            if (trOutroLineIndex < task.outroDialogue.length - 1) {
+                trOutroLineIndex++;
+                renderTetrisOutroStage();
+            }
         }
 
         function tetrisGameOver() {
