@@ -1580,6 +1580,17 @@
             z-index: 10;
         }
 
+        /* Тап по фону модалки (мимо окна) больше не закрывает её — только эта
+           кнопка. Кратко подсвечиваем её, если тапнули мимо, чтобы было понятно,
+           куда нажимать. См. closeModalOutside() в script.js. */
+        @keyframes modalCloseNudge {
+            0%, 100% { transform: scale(1); text-shadow: none; }
+            30% { transform: scale(1.35); text-shadow: 0 0 10px rgba(139, 0, 0, 0.6); }
+        }
+        .modal-close-nudge {
+            animation: modalCloseNudge 0.45s ease;
+        }
+
         .modal-header h2 {
             font-size: 22px;
             color: #8b0000;

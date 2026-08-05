@@ -2255,7 +2255,10 @@
                 levels: [
                     { targetScore: 700, startLevel: 1, name: "Round 1: Warm-Up" },
                     { targetScore: 1500, startLevel: 3, name: "Round 2: Picking Up Speed" },
-                    { targetScore: 2600, startLevel: 5, name: "Round 3: Arcade Master" }
+                    { targetScore: 2600, startLevel: 5, name: "Round 3: Arcade Master" },
+                    { targetScore: 4200, startLevel: 7, name: "Round 4: Turbo" },
+                    { targetScore: 6000, startLevel: 9, name: "Round 5: Overdrive" },
+                    { targetScore: 8500, startLevel: 11, name: "Round 6: Final Boss" }
                 ]
             },
 
@@ -7479,8 +7482,18 @@
         }
 
         function closeModalOutside(event) {
-            if (event.target.id === 'modalOverlay') {
-                closeModal();
+            // Раньше клик по фону (мимо окна модалки) сразу закрывал задание — на
+            // мобильных это легко задеть случайно, а часть типов заданий (напр.
+            // кино-викторина) не сохраняет прогресс внутри себя, так что случайное
+            // закрытие сбрасывало пройденные вопросы. Теперь клик по фону НЕ
+            // закрывает окно — закрыть можно только явной кнопкой × в углу; при
+            // клике мимо коротко подсвечиваем эту кнопку, чтобы было видно, куда жать.
+            if (event.target.id !== 'modalOverlay') return;
+            const closeBtn = document.querySelector('.modal-close');
+            if (closeBtn) {
+                closeBtn.classList.remove('modal-close-nudge');
+                void closeBtn.offsetWidth; // рестарт CSS-анимации при повторных кликах подряд
+                closeBtn.classList.add('modal-close-nudge');
             }
         }
 
