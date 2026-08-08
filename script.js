@@ -3371,6 +3371,7 @@
             tlStage = (task.dialogue && task.dialogue.length) ? 'dialogue' : 'intro';
             renderTruthLieModal();
             document.getElementById('modalOverlay').classList.add('active');
+            skPlayMusic();
         }
 
         // --- Диспетчер стадий: диалог-вступление / правила допроса+вопросы / диалог-прощание ---
@@ -4936,6 +4937,7 @@
             cphStage = (task.dialogue && task.dialogue.length) ? 'dialogue' : 'task';
             renderCiphersModal();
             document.getElementById('modalOverlay').classList.add('active');
+            skPlayMusic();
         }
 
         // --- Диспетчер стадий: диалог-вступление / сами шифры / диалог-прощание ---
@@ -7981,6 +7983,7 @@
             // (см. checkMovieAnswer), чтобы не утёк в другое задание.
             document.getElementById('errorMsg').className = 'error-msg';
             hpStopMusic();
+            skStopMusic();
         }
 
         function closeModalOutside(event) {
@@ -8464,6 +8467,31 @@
             if (hpAudio) {
                 hpAudio.pause();
                 hpAudio.currentTime = 0;
+            }
+        }
+
+        // --- Музыкальная тема Шерлока: играет на повтор внутри модалок локаций
+        // 3 (ciphers, Pico de Orizaba) и 7 (truthlie, Guanajuato) — единственных
+        // двух заданий с диалогами Шерлока. Логика полностью аналогична hpAudio
+        // выше: play() при открытии модалки этих заданий, stop() в closeModal(). ---
+        let skAudio = null;
+
+        function skPlayMusic() {
+            try {
+                if (!skAudio) {
+                    skAudio = new Audio('audio/sherlock_theme.mp3');
+                    skAudio.loop = true;
+                    skAudio.volume = 0.55;
+                }
+                skAudio.currentTime = 0;
+                skAudio.play().catch(() => {});
+            } catch (e) { /* тихо игнорируем, если браузер заблокировал автозапуск */ }
+        }
+
+        function skStopMusic() {
+            if (skAudio) {
+                skAudio.pause();
+                skAudio.currentTime = 0;
             }
         }
 
